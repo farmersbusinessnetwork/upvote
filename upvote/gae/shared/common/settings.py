@@ -28,7 +28,7 @@ from upvote.shared import constants
 #   USER_EMAIL_DOMAIN = 'foo.com'
 #
 # NOTE: Must be all lowercase.
-USER_EMAIL_DOMAIN = 'todo-example-domain.com'
+USER_EMAIL_DOMAIN = 'farmersbusinessnetwork.com'
 
 # Whether all new applications will be checked against binary analysis service.
 #
@@ -47,7 +47,7 @@ ENABLE_BINARY_ANALYSIS_PRECACHING = False
 EVENT_CREATION = constants.EVENT_CREATION.HOST_OWNER
 
 # The default execution mode for clients syncing for the first time.
-SANTA_DEFAULT_CLIENT_MODE = constants.SANTA_CLIENT_MODE.LOCKDOWN
+SANTA_DEFAULT_CLIENT_MODE = constants.SANTA_CLIENT_MODE.MONITOR
 # The maximum number of events that a Santa client will attempt to upload in a
 # single request.
 SANTA_EVENT_BATCH_SIZE = 100
@@ -69,7 +69,9 @@ SANTA_CLIENT_VALIDATION = constants.VALIDATION_MODE.FAIL_CLOSED
 
 # A list of email addresses of users that will always be have the permissions of
 # administrators.
-FAILSAFE_ADMINISTRATORS = []
+FAILSAFE_ADMINISTRATORS = [
+  "alex@farmersbusinessnetwork.com"
+]
 
 # The score thresholds beyond which a Blockable will transition to the
 # associated state.
@@ -78,9 +80,9 @@ FAILSAFE_ADMINISTRATORS = []
 # threshold (-15 by default), they become banned. If they rise above, say, the
 # GLOBALLY_WHITELISTED threshold, they become globally whitelisted.
 VOTING_THRESHOLDS = {
-    constants.STATE.BANNED: -15,
-    constants.STATE.APPROVED_FOR_LOCAL_WHITELISTING: 5,
-    constants.STATE.GLOBALLY_WHITELISTED: 50,
+    constants.STATE.BANNED: -1,
+    constants.STATE.APPROVED_FOR_LOCAL_WHITELISTING: 1,
+    constants.STATE.GLOBALLY_WHITELISTED: 10,
 }
 
 # The vote weight available to a user with the associated role.
@@ -93,11 +95,11 @@ VOTING_THRESHOLDS = {
 # See docs for further discussion.
 VOTING_WEIGHTS = {
     constants.USER_ROLE.UNTRUSTED_USER: 0,
-    constants.USER_ROLE.USER: 1,
-    constants.USER_ROLE.TRUSTED_USER: 3,
-    constants.USER_ROLE.SUPERUSER: 25,
-    constants.USER_ROLE.ADMINISTRATOR: 25,
-    constants.USER_ROLE.SECURITY: 25,
+    constants.USER_ROLE.USER: 0,
+    constants.USER_ROLE.TRUSTED_USER: 0,
+    constants.USER_ROLE.SUPERUSER: 10,
+    constants.USER_ROLE.ADMINISTRATOR: 10,
+    constants.USER_ROLE.SECURITY: 10,
 }
 
 # Maps elevated-privilege roles to a list of user group names.
@@ -157,9 +159,9 @@ class ProdEnv(settings_utils.DefaultEnv):
   """The production environment namespace."""
   NAME = 'Prod'
 
-  HOSTNAME = 'XXX-REPLACE-WITH-PROJECT-ID-XXX.appspot.com'
-  PROJECT_ID = 'XXX-REPLACE-WITH-PROJECT-ID-XXX'
-  DATASTORE_BACKUP_BUCKET = 'XXX-REPLACE-WITH-PROJECT-ID-XXX'
+  HOSTNAME = 'santaupvote.appspot.com'
+  PROJECT_ID = 'santaupvote'
+  DATASTORE_BACKUP_BUCKET = 'santaupvote'
 
   # The address of the Bit9 frontend server from which the REST API is served.
   # The path /api/bit9platform/v1 at this address should display the API docs.
@@ -172,7 +174,7 @@ class ProdEnv(settings_utils.DefaultEnv):
   # BigQuery.
   #
   # See docs for complete setup instructions.
-  ENABLE_BIGQUERY_STREAMING = False
+  ENABLE_BIGQUERY_STREAMING = True
 
 
 class LocalEnv(settings_utils.DefaultEnv):
