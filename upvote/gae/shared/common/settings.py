@@ -48,6 +48,16 @@ EVENT_CREATION = constants.EVENT_CREATION.HOST_OWNER
 
 # The default execution mode for clients syncing for the first time.
 SANTA_DEFAULT_CLIENT_MODE = constants.SANTA_CLIENT_MODE.MONITOR
+# If provided, a regex string that matches execution paths (read: not files)
+# from which executions will be allowed.
+# NOTE: This regex must be written in ICU format. Docs can be found here:
+# https://developer.apple.com/documentation/foundation/nsregularexpression
+SANTA_DIRECTORY_WHITELIST_REGEX = None
+# If provided, a regex string that matches execution paths (read: not files)
+# from which executions will be blocked.
+# NOTE: This regex must be written in ICU format. Docs can be found here:
+# https://developer.apple.com/documentation/foundation/nsregularexpression
+SANTA_DIRECTORY_BLACKLIST_REGEX = None
 # The maximum number of events that a Santa client will attempt to upload in a
 # single request.
 SANTA_EVENT_BATCH_SIZE = 100
@@ -111,8 +121,8 @@ GROUP_ROLE_ASSIGNMENTS = {
     constants.USER_ROLE.TRUSTED_USER: [],
     constants.USER_ROLE.UNTRUSTED_USER: [],
     constants.USER_ROLE.SUPERUSER: [],
-    constants.USER_ROLE.ADMINISTRATOR: ['admin-users'],
     constants.USER_ROLE.SECURITY: [],
+    constants.USER_ROLE.ADMINISTRATOR: ['admin-users'],
 }
 
 # Certificate hashes that are critical to the macOS platform.
