@@ -14,5 +14,6 @@ py_library(
         "//external:gcloud_auth",
         "//external:gcloud_resumable_media",
         "//external:requests",
+        "//external:setuptools"
     ],
 )
