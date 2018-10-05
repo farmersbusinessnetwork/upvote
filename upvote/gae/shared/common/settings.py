@@ -48,6 +48,16 @@ EVENT_CREATION = constants.EVENT_CREATION.HOST_OWNER
 
 # The default execution mode for clients syncing for the first time.
 SANTA_DEFAULT_CLIENT_MODE = constants.SANTA_CLIENT_MODE.LOCKDOWN
+# If provided, a regex string that matches execution paths (read: not files)
+# from which executions will be allowed.
+# NOTE: This regex must be written in ICU format. Docs can be found here:
+# https://developer.apple.com/documentation/foundation/nsregularexpression
+SANTA_DIRECTORY_WHITELIST_REGEX = None
+# If provided, a regex string that matches execution paths (read: not files)
+# from which executions will be blocked.
+# NOTE: This regex must be written in ICU format. Docs can be found here:
+# https://developer.apple.com/documentation/foundation/nsregularexpression
+SANTA_DIRECTORY_BLACKLIST_REGEX = None
 # The maximum number of events that a Santa client will attempt to upload in a
 # single request.
 SANTA_EVENT_BATCH_SIZE = 100
@@ -67,7 +77,7 @@ SANTA_BUNDLES_ENABLED = True
 # have an effect if some authentication procedure is written.
 SANTA_CLIENT_VALIDATION = constants.VALIDATION_MODE.FAIL_CLOSED
 
-# A list of email addresses of users that will always be have the permissions of
+# A list of email addresses of users that will always have the permissions of
 # administrators.
 FAILSAFE_ADMINISTRATORS = []
 
@@ -78,7 +88,7 @@ FAILSAFE_ADMINISTRATORS = []
 # threshold (-15 by default), they become banned. If they rise above, say, the
 # GLOBALLY_WHITELISTED threshold, they become globally whitelisted.
 VOTING_THRESHOLDS = {
-    constants.STATE.BANNED: -15,
+    constants.STATE.BANNED: -26,
     constants.STATE.APPROVED_FOR_LOCAL_WHITELISTING: 5,
     constants.STATE.GLOBALLY_WHITELISTED: 50,
 }
@@ -96,8 +106,8 @@ VOTING_WEIGHTS = {
     constants.USER_ROLE.USER: 1,
     constants.USER_ROLE.TRUSTED_USER: 3,
     constants.USER_ROLE.SUPERUSER: 25,
-    constants.USER_ROLE.ADMINISTRATOR: 25,
     constants.USER_ROLE.SECURITY: 25,
+    constants.USER_ROLE.ADMINISTRATOR: 25,
 }
 
 # Maps elevated-privilege roles to a list of user group names.
@@ -105,11 +115,11 @@ VOTING_WEIGHTS = {
 # These groups are expanded to users (See upvote/gae/shared/common/groups.py)
 # and modified with their roles via the /cron/roles/sync cron.
 GROUP_ROLE_ASSIGNMENTS = {
-    constants.USER_ROLE.TRUSTED_USER: [],
     constants.USER_ROLE.UNTRUSTED_USER: [],
+    constants.USER_ROLE.TRUSTED_USER: [],
     constants.USER_ROLE.SUPERUSER: [],
-    constants.USER_ROLE.ADMINISTRATOR: ['admin-users'],
     constants.USER_ROLE.SECURITY: [],
+    constants.USER_ROLE.ADMINISTRATOR: ['admin-users'],
 }
 
 # Certificate hashes that are critical to the macOS platform.

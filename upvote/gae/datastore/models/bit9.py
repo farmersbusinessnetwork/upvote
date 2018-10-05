@@ -20,9 +20,9 @@ import logging
 from google.appengine.ext import ndb
 
 from common.cloud_kms import kms_ndb
-from upvote.gae.datastore import utils
 from upvote.gae.datastore.models import base
-from upvote.gae.datastore.models import bigquery
+from upvote.gae.datastore.models import mixin
+from upvote.gae.datastore.models import singleton
 from upvote.shared import constants
 
 _KEY_LOC = 'global'
@@ -30,7 +30,15 @@ _KEY_RING = 'ring'
 _KEY_NAME = 'bit9'
 
 
-class Bit9ApiAuth(utils.Singleton):
+class Error(Exception):
+  """Base error class for module."""
+
+
+class InvalidEnforcementLevel(Error):
+  """Raised if an invalid Bit9 enforcement level is provided."""
+
+
+class Bit9ApiAuth(singleton.Singleton):
   """The Bit9 API key.
 
   This class is intended to be a singleton as there should only be a single
@@ -39,17 +47,7 @@ class Bit9ApiAuth(utils.Singleton):
   api_key = kms_ndb.EncryptedBlobProperty(_KEY_NAME, _KEY_RING, _KEY_LOC)
 
 
-class Bit9ModelMixin(base.BaseModelMixin):
-  """Mix-in for Bit9 model common code."""
-
-  def GetPlatformName(self):
-    return constants.PLATFORM.WINDOWS
-
-  def GetClientName(self):
-    return constants.CLIENT.BIT9
-
-
-class Bit9Policy(Bit9ModelMixin, ndb.Model):
+class Bit9Policy(mixin.Bit9, ndb.Model):
   """A Host policy in Bit9.
 
   Corresponds to Bit9's "policy" object.
@@ -69,7 +67,7 @@ class Bit9Policy(Bit9ModelMixin, ndb.Model):
   updated_dt = ndb.DateTimeProperty(auto_now=True)
 
 
-class Bit9Host(Bit9ModelMixin, base.Host):
+class Bit9Host(mixin.Bit9, base.Host):
   """A Host in Bit9.
 
   Corresponds to Bit9's "computer" object.
@@ -92,6 +90,17 @@ class Bit9Host(Bit9ModelMixin, base.Host):
     host_query = cls.query(cls.users == user.nickname)
     return [key.id() for key in host_query.fetch(keys_only=True)]
 
+  @classmethod
+  @ndb.transactional
+  def ChangePolicyKey(cls, host_id, new_enforcement_level):
+
+    if new_enforcement_level not in constants.BIT9_ENFORCEMENT_LEVEL.SET_ALL:
+      raise InvalidEnforcementLevel(new_enforcement_level)
+
+    host = cls.get_by_id(host_id)
+    host.policy_key = ndb.Key(Bit9Policy, new_enforcement_level)
+    host.put()
+
   def IsAssociatedWithUser(self, user):
     """Returns whether the given user is associated with this host."""
     return user.nickname in self.users
@@ -105,7 +114,7 @@ class Bit9Host(Bit9ModelMixin, base.Host):
     return result
 
 
-class Bit9Event(Bit9ModelMixin, base.Event):
+class Bit9Event(mixin.Bit9, base.Event):
   """An event from Bit9.
 
   Attributes:
@@ -144,7 +153,7 @@ class Bit9Event(Bit9ModelMixin, base.Event):
     self.bit9_id = max(self.bit9_id, related_event.bit9_id)
 
 
-class Bit9Binary(Bit9ModelMixin, base.Binary):
+class Bit9Binary(mixin.Bit9, base.Binary):
   """A file that has been blocked by Bit9.
 
   key = hash of blockable
@@ -185,19 +194,12 @@ class Bit9Binary(Bit9ModelMixin, base.Binary):
   file_size = ndb.IntegerProperty()
   file_catalog_id = ndb.StringProperty()
 
-  def PersistRow(self, action, timestamp=None):
-    if timestamp is None:
-      timestamp = datetime.datetime.now()
-    bigquery.BinaryRow.DeferCreate(
-        sha256=self.key.id(),
-        timestamp=timestamp,
-        action=action,
-        state=self.state,
-        score=self.score,
-        platform=self.GetPlatformName(),
-        client=self.GetClientName(),
-        first_seen_file_name=self.first_seen_name,
-        cert_fingerprint=self.cert_id)
+  def InsertBigQueryRow(self, action, **kwargs):
+
+    defaults = {'first_seen_file_name': self.first_seen_name}
+    defaults.update(kwargs.copy())
+
+    super(Bit9Binary, self).InsertBigQueryRow(action, **defaults)
 
   def CalculateInstallerState(self):
     """Returns the blockable's installer state as prescribed by Upvote.
@@ -208,7 +210,7 @@ class Bit9Binary(Bit9ModelMixin, base.Binary):
     Returns:
       The current installer state prescribed by Upvote.
     """
-    # pylint: disable=g-explicit-bool-comparison
+    # pylint: disable=g-explicit-bool-comparison, singleton-comparison
     query = Bit9Rule.query(
         Bit9Rule.in_effect == True,
         ndb.OR(
@@ -216,7 +218,7 @@ class Bit9Binary(Bit9ModelMixin, base.Binary):
             Bit9Rule.policy == constants.RULE_POLICY.FORCE_NOT_INSTALLER),
         ancestor=self.key
     ).order(-Bit9Rule.updated_dt)
-    # pylint: enable=g-explicit-bool-comparison
+    # pylint: enable=g-explicit-bool-comparison, singleton-comparison
 
     installer_rule = query.get()
     if installer_rule is None:
@@ -225,8 +227,8 @@ class Bit9Binary(Bit9ModelMixin, base.Binary):
       return installer_rule.policy == constants.RULE_POLICY.FORCE_INSTALLER
 
 
-class Bit9Certificate(Bit9ModelMixin, base.Certificate):
-  """A certificate used to codesign at least one SantaBlockable.
+class Bit9Certificate(mixin.Bit9, base.Certificate):
+  """A certificate used to codesign at least one Bit9Binary.
 
   key = SHA-256 hash of certificate
 
@@ -239,20 +241,20 @@ class Bit9Certificate(Bit9ModelMixin, base.Certificate):
   valid_to_dt = ndb.DateTimeProperty()
   parent_certificate_thumbprint = ndb.StringProperty()
 
-  def PersistRow(self, action, timestamp=None):
-    if timestamp is None:
-      timestamp = datetime.datetime.now()
-    bigquery.CertificateRow.DeferCreate(
-        fingerprint=self.key.id(),
-        timestamp=timestamp,
-        action=action,
-        not_before=self.valid_from_dt,
-        not_after=self.valid_to_dt,
-        state=self.state,
-        score=self.score)
+  def InsertBigQueryRow(self, action, **kwargs):
+
+    defaults = {
+        'not_before': self.valid_from_dt,
+        'not_after': self.valid_to_dt,
+        'common_name': 'Unknown',
+        'organization': 'Unknown',
+        'organizational_unit': 'Unknown'}
+    defaults.update(kwargs.copy())
+
+    super(Bit9Certificate, self).InsertBigQueryRow(action, **defaults)
 
 
-class Bit9Rule(Bit9ModelMixin, base.Rule):
+class Bit9Rule(mixin.Bit9, base.Rule):
   """A rule dictating a certain policy should be applied to a blockable.
 
   Attributes:

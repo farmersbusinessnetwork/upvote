@@ -24,81 +24,12 @@ from google.appengine.ext import testbed
 from upvote.gae.datastore import test_utils
 from upvote.gae.datastore import utils
 from upvote.gae.datastore.models import base
-from upvote.gae.datastore.models import bigquery
-from upvote.gae.shared.common import basetest
-from upvote.gae.shared.common import settings
+from upvote.gae.lib.testing import basetest
 from upvote.gae.shared.common import user_map
 from upvote.shared import constants
 
 
 _TEST_EMAIL = user_map.UsernameToEmail('testemail')
-
-
-class TestModel(base.BaseModelMixin, ndb.Model):
-  int_prop = ndb.IntegerProperty()
-
-
-class TestPlatformModel(base.BaseModelMixin, ndb.Model):
-  int_prop = ndb.IntegerProperty()
-
-  def GetPlatformName(self):
-    return 'some_platform'
-
-
-class BaseModelMixinTest(basetest.UpvoteTestCase):
-
-  def testToDict_Put(self):
-    test_model = TestModel(int_prop=111)
-    test_model.put()
-    expected = {
-        'int_prop': 111,
-        'id': test_model.key.id(),
-        'key': test_model.key.urlsafe()}
-    self.assertDictEqual(expected, test_model.to_dict())
-
-  def testToDict_NotPut(self):
-    test_model = TestModel(int_prop=111)
-    expected = {'int_prop': 111}
-    self.assertDictEqual(expected, test_model.to_dict())
-
-  def testToDict_WithPlatformName(self):
-    test_model = TestPlatformModel(int_prop=111)
-    expected = {
-        'int_prop': 111,
-        'operating_system_family': 'some_platform'}
-    self.assertDictEqual(expected, test_model.to_dict())
-
-  def testToDict_ExcludeId(self):
-
-    # Verify that the ID shows up without 'exclude'.
-    test_model = TestModel(int_prop=111)
-    test_model.put()
-    expected = {
-        'int_prop': 111,
-        'id': test_model.key.id(),
-        'key': test_model.key.urlsafe()}
-    self.assertDictEqual(expected, test_model.to_dict())
-
-    # Verify that the ID shows up with an irrelevant 'exclude'.
-    test_model = TestModel(int_prop=111)
-    test_model.put()
-    expected = {
-        'int_prop': 111,
-        'id': test_model.key.id(),
-        'key': test_model.key.urlsafe()}
-    self.assertDictEqual(expected, test_model.to_dict(exclude=['blah']))
-
-    # Now verify that it doesn't with 'exclude'.
-    test_model = TestModel(int_prop=111)
-    test_model.put()
-    expected = {'int_prop': 111}
-    self.assertDictEqual(expected, test_model.to_dict(exclude=['id']))
-
-  def testToDict_ExcludePlatformName(self):
-    test_model = TestPlatformModel(int_prop=111)
-    expected = {'int_prop': 111}
-    self.assertDictEqual(expected, test_model.to_dict(
-        exclude=['operating_system_family']))
 
 
 class EventTest(basetest.UpvoteTestCase):
@@ -271,28 +202,6 @@ class BlockableTest(basetest.UpvoteTestCase):
     self.user = test_utils.CreateUser(email=_TEST_EMAIL)
     self.Login(self.user.email)
 
-  def testChangeState(self):
-
-    # Verify the Blockable is in the default state of UNTRUSTED.
-    blockable_hash = self.blockable_1.blockable_hash
-    blockable = base.Blockable.get_by_id(blockable_hash)
-    self.assertIsNotNone(blockable)
-    self.assertEqual(constants.STATE.UNTRUSTED, blockable.state)
-
-    # Note the state change timestamp.
-    old_state_change_dt = blockable.state_change_dt
-
-    # Change the state.
-    blockable.ChangeState(constants.STATE.BANNED)
-
-    # Reload, and verify the state change.
-    blockable = base.Blockable.get_by_id(blockable_hash)
-    self.assertIsNotNone(blockable)
-    self.assertEqual(constants.STATE.BANNED, blockable.state)
-
-    # And the state change timestamp should be increased.
-    self.assertTrue(blockable.state_change_dt > old_state_change_dt)
-
   def testAvoidInitialScoreCalculation(self):
     b = base.Blockable(id_type='SHA256')
     with mock.patch.object(b, 'GetVotes', return_value=[]) as get_votes_mock:
@@ -421,16 +330,6 @@ class BlockableTest(basetest.UpvoteTestCase):
     allowed, reason = cert.IsVotingAllowed(current_user=admin)
     self.assertTrue(allowed)
     self.assertIsNone(reason)
-
-  def testResetState(self):
-    blockable = test_utils.CreateBlockable(
-        state=constants.STATE.BANNED, flagged=True)
-    blockable.ResetState()
-
-    retrieved_blockable = blockable.key.get()
-
-    self.assertEqual(retrieved_blockable.state, constants.STATE.UNTRUSTED)
-    self.assertFalse(retrieved_blockable.flagged)
 
   def testToDict_Score(self):
     blockable = test_utils.CreateBlockable()
@@ -563,239 +462,6 @@ class BlacklistTest(basetest.UpvoteTestCase):
     self.assertFalse(base.Blacklist.IsBlacklisted('Not Malware For Real'))
 
 
-# Done for the sake of brevity.
-USER = constants.USER_ROLE.USER
-TRUSTED_USER = constants.USER_ROLE.TRUSTED_USER
-ADMINISTRATOR = constants.USER_ROLE.ADMINISTRATOR
-
-
-class UserTest(basetest.UpvoteTestCase):
-  """Test User model."""
-
-  def setUp(self):
-    super(UserTest, self).setUp()
-    self._voting_weights = settings.VOTING_WEIGHTS
-
-    self.PatchEnv(settings.ProdEnv, ENABLE_BIGQUERY_STREAMING=True)
-
-  def testGetOrInsert_ExistingUser_EmailAddr(self):
-
-    base.User.get_or_insert(_TEST_EMAIL)
-    self.assertEntityCount(base.User, 1)
-
-    user = base.User.GetOrInsert(email_addr=_TEST_EMAIL)
-
-    self.assertIsNotNone(user)
-    self.assertEntityCount(base.User, 1)
-    self.assertTaskCount(constants.TASK_QUEUE.BQ_PERSISTENCE, 0)
-
-  def testGetOrInsert_ExistingUser_AppEngineUser(self):
-
-    base.User.get_or_insert(_TEST_EMAIL)
-    self.assertEntityCount(base.User, 1)
-
-    appengine_user = test_utils.CreateAppEngineUser(email=_TEST_EMAIL)
-
-    user = base.User.GetOrInsert(appengine_user=appengine_user)
-
-    self.assertIsNotNone(user)
-    self.assertEntityCount(base.User, 1)
-    self.assertTaskCount(constants.TASK_QUEUE.BQ_PERSISTENCE, 0)
-
-  def testGetOrInsert_NewUser_EmailAddr(self):
-
-    self.assertEntityCount(base.User, 0)
-    self.assertEntityCount(bigquery.UserRow, 0)
-
-    user = base.User.GetOrInsert(email_addr=_TEST_EMAIL)
-
-    self.assertIsNotNone(user)
-    self.assertEntityCount(base.User, 1)
-    self.assertEntityCount(bigquery.UserRow, 0)
-
-    self.assertListEqual([constants.USER_ROLE.USER], user.roles)
-    self.assertSetEqual(constants.PERMISSIONS.SET_USER, user.permissions)
-
-    self.assertTaskCount(constants.TASK_QUEUE.BQ_PERSISTENCE, 1)
-    self.DrainTaskQueue(constants.TASK_QUEUE.BQ_PERSISTENCE)
-    self.assertTaskCount(constants.TASK_QUEUE.BQ_PERSISTENCE, 0)
-    self.assertEntityCount(bigquery.UserRow, 1)
-
-  def testGetOrInsert_NewUser_EmailAddr_Lowercase(self):
-
-    user = base.User.GetOrInsert(email_addr='UPPER@case.addr')
-    self.assertIsNotNone(user)
-    self.assertEqual('upper@case.addr', user.email)
-    self.assertEqual('upper', user.nickname)
-
-  def testGetOrInsert_NewUser_AppEngineUser(self):
-
-    self.assertEntityCount(base.User, 0)
-    self.assertEntityCount(bigquery.UserRow, 0)
-
-    appengine_user = test_utils.CreateAppEngineUser(email=_TEST_EMAIL)
-    user = base.User.GetOrInsert(appengine_user=appengine_user)
-
-    self.assertIsNotNone(user)
-    self.assertEntityCount(base.User, 1)
-    self.assertEntityCount(bigquery.UserRow, 0)
-
-    self.assertListEqual([constants.USER_ROLE.USER], user.roles)
-    self.assertSetEqual(constants.PERMISSIONS.SET_USER, user.permissions)
-
-    self.assertTaskCount(constants.TASK_QUEUE.BQ_PERSISTENCE, 1)
-    self.DrainTaskQueue(constants.TASK_QUEUE.BQ_PERSISTENCE)
-    self.assertTaskCount(constants.TASK_QUEUE.BQ_PERSISTENCE, 0)
-    self.assertEntityCount(bigquery.UserRow, 1)
-
-  def testGetOrInsert_UnknownUserError(self):
-
-    self.Patch(base.users, 'get_current_user', return_value=None)
-
-    with self.assertRaises(base.UnknownUserError):
-      base.User.GetOrInsert()
-
-  def testPrePutHook(self):
-    user = base.User.GetOrInsert(email_addr=_TEST_EMAIL)
-    user.roles = [USER] * 100
-    self.assertEqual(100, len(user.roles))
-    user.put()
-    self.assertEqual(1, len(user.roles))
-    self.assertEquals([USER], user.roles)
-
-  def testSetRoles_RemoveAll(self):
-    with self.LoggedInUser() as user:
-      self.assertListEqual([constants.USER_ROLE.USER], user.roles)
-
-      email_addr = user.email
-      base.User.SetRoles(email_addr, [])
-      user = base.User.GetOrInsert(email_addr=email_addr)
-      self.assertListEqual([constants.USER_ROLE.USER], user.roles)
-
-    self.assertTaskCount(constants.TASK_QUEUE.BQ_PERSISTENCE, 0)
-
-  def testSetRoles_InvalidUserRole(self):
-    with self.LoggedInUser() as user:
-      with self.assertRaises(base.InvalidUserRoleError):
-        base.User.SetRoles(user.email, ['INVALID_ROLE'])
-
-  def testSetRoles_NoChanges(self):
-
-    with self.LoggedInUser() as user:
-      self.assertListEqual([constants.USER_ROLE.USER], user.roles)
-      old_vote_weight = user.vote_weight
-
-    base.User.SetRoles(user.email, [constants.USER_ROLE.USER])
-    user = base.User.GetOrInsert(email_addr=user.email)
-
-    self.assertListEqual([constants.USER_ROLE.USER], user.roles)
-    self.assertEqual(user.vote_weight, old_vote_weight)
-
-    self.assertTaskCount(constants.TASK_QUEUE.BQ_PERSISTENCE, 0)
-
-  def testSetRoles_AddRole(self):
-
-    with self.LoggedInUser() as user:
-      self.assertListEqual([constants.USER_ROLE.USER], user.roles)
-      self.assertEqual(
-          self._voting_weights[constants.USER_ROLE.USER], user.vote_weight)
-
-    new_roles = [constants.USER_ROLE.SUPERUSER, constants.USER_ROLE.USER]
-    base.User.SetRoles(user.email, new_roles)
-    user = base.User.GetOrInsert(email_addr=user.email)
-
-    self.assertListEqual(new_roles, user.roles)
-    self.assertEqual(
-        self._voting_weights[constants.USER_ROLE.SUPERUSER], user.vote_weight)
-
-    self.assertTaskCount(constants.TASK_QUEUE.BQ_PERSISTENCE, 1)
-    self.DrainTaskQueue(constants.TASK_QUEUE.BQ_PERSISTENCE)
-    self.assertTaskCount(constants.TASK_QUEUE.BQ_PERSISTENCE, 0)
-    self.assertEntityCount(bigquery.UserRow, 1)
-
-  def testSetRoles_RemoveRole(self):
-
-    old_roles = [constants.USER_ROLE.SUPERUSER, constants.USER_ROLE.USER]
-    user = test_utils.CreateUser(email=_TEST_EMAIL, roles=old_roles)
-    self.assertEqual(
-        self._voting_weights[constants.USER_ROLE.SUPERUSER], user.vote_weight)
-
-    new_roles = [constants.USER_ROLE.USER]
-    base.User.SetRoles(_TEST_EMAIL, new_roles)
-    user = base.User.GetOrInsert(email_addr=_TEST_EMAIL)
-    self.assertListEqual(new_roles, user.roles)
-    self.assertEqual(
-        self._voting_weights[constants.USER_ROLE.USER], user.vote_weight)
-
-    self.assertTaskCount(constants.TASK_QUEUE.BQ_PERSISTENCE, 1)
-    self.DrainTaskQueue(constants.TASK_QUEUE.BQ_PERSISTENCE)
-    self.assertTaskCount(constants.TASK_QUEUE.BQ_PERSISTENCE, 0)
-    self.assertEntityCount(bigquery.UserRow, 1)
-
-  def testUpdateRoles_AddRole(self):
-
-    with self.LoggedInUser() as user:
-      self.assertListEqual([constants.USER_ROLE.USER], user.roles)
-      self.assertEqual(
-          self._voting_weights[constants.USER_ROLE.USER], user.vote_weight)
-
-    base.User.UpdateRoles(user.email, add=[constants.USER_ROLE.SUPERUSER])
-    user = base.User.GetOrInsert(email_addr=user.email)
-    self.assertListEqual(
-        [constants.USER_ROLE.SUPERUSER, constants.USER_ROLE.USER], user.roles)
-    self.assertEqual(
-        self._voting_weights[constants.USER_ROLE.SUPERUSER], user.vote_weight)
-
-    self.assertTaskCount(constants.TASK_QUEUE.BQ_PERSISTENCE, 1)
-    self.DrainTaskQueue(constants.TASK_QUEUE.BQ_PERSISTENCE)
-    self.assertTaskCount(constants.TASK_QUEUE.BQ_PERSISTENCE, 0)
-    self.assertEntityCount(bigquery.UserRow, 1)
-
-  def testUpdateRoles_RemoveRole(self):
-
-    old_roles = [constants.USER_ROLE.SUPERUSER, constants.USER_ROLE.USER]
-    user = test_utils.CreateUser(email=_TEST_EMAIL, roles=old_roles)
-    with self.LoggedInUser(user=user):
-      self.assertEqual(
-          self._voting_weights[constants.USER_ROLE.SUPERUSER], user.vote_weight)
-
-    base.User.UpdateRoles(
-        _TEST_EMAIL, remove=[constants.USER_ROLE.SUPERUSER])
-    user = base.User.GetOrInsert(email_addr=_TEST_EMAIL)
-    self.assertListEqual([constants.USER_ROLE.USER], user.roles)
-    self.assertEqual(
-        self._voting_weights[constants.USER_ROLE.USER], user.vote_weight)
-
-    self.assertTaskCount(constants.TASK_QUEUE.BQ_PERSISTENCE, 1)
-    self.DrainTaskQueue(constants.TASK_QUEUE.BQ_PERSISTENCE)
-    self.assertTaskCount(constants.TASK_QUEUE.BQ_PERSISTENCE, 0)
-    self.assertEntityCount(bigquery.UserRow, 1)
-
-  def testIsAdmin_Nope(self):
-    lowly_peon = test_utils.CreateUser(roles=[constants.USER_ROLE.USER])
-    self.assertFalse(lowly_peon.is_admin)
-
-  def testIsAdmin_HasAdminRole(self):
-    fancy_admin = test_utils.CreateUser(
-        roles=[constants.USER_ROLE.ADMINISTRATOR])
-    self.assertTrue(fancy_admin.is_admin)
-
-  def testIsAdmin_IsFailsafe(self):
-    self.PatchSetting('FAILSAFE_ADMINISTRATORS', [_TEST_EMAIL])
-
-    mr_failsafe = test_utils.CreateUser(
-        email=_TEST_EMAIL, roles=[constants.USER_ROLE.USER])
-    self.assertTrue(mr_failsafe.is_admin)
-
-  def testPermissions_Admin(self):
-    admin = test_utils.CreateUser(admin=True)
-    self.assertSetEqual(constants.PERMISSIONS.SET_ALL, admin.permissions)
-
-  def testPermissions_User(self):
-    user = test_utils.CreateUser()
-    self.assertSetEqual(constants.PERMISSIONS.SET_USER, user.permissions)
-
-
 class HostTest(basetest.UpvoteTestCase):
 
   def setUp(self):
@@ -912,6 +578,61 @@ class VoteTest(basetest.UpvoteTestCase):
     self.assertTrue(vote.in_effect)
     vote.key = None
     self.assertFalse(vote.in_effect)
+
+
+class RuleTest(basetest.UpvoteTestCase):
+
+  def testInsertBigQueryRow_LocalRule_UserKeyMissing(self):
+    """Verifies that a LOCAL row is inserted, even if user_key is missing.
+
+    The host_id and user_key columns have to be NULLABLE in order to support
+    GLOBAL rows (which will lack values for both of these columns). If user_key
+    is mistakenly omitted, we should still insert a LOCAL row with the values
+    we have.
+    """
+    blockable_key = test_utils.CreateSantaBlockable().key
+    local_rule = test_utils.CreateSantaRule(blockable_key, host_id='12345')
+    local_rule.InsertBigQueryRow()
+
+    self.assertBigQueryInsertions(
+        [constants.BIGQUERY_TABLE.RULE], reset_mock=False)
+
+    calls = self.GetBigQueryCalls()
+    self.assertEqual(1, len(calls))
+    self.assertEqual(constants.RULE_SCOPE.LOCAL, calls[0][1].get('scope'))
+
+  def testInsertBigQueryRow_LocalRule_HostIdMissing(self):
+    """Verifies that a LOCAL row is inserted, even if host_id is missing.
+
+    The host_id and user_key columns have to be NULLABLE in order to support
+    GLOBAL rows (which will lack values for both of these columns). If host_id
+    is mistakenly omitted, we should still insert a LOCAL row with the values
+    we have.
+    """
+    blockable_key = test_utils.CreateSantaBlockable().key
+    user_key = test_utils.CreateUser().key
+    local_rule = test_utils.CreateSantaRule(blockable_key, user_key=user_key)
+    local_rule.InsertBigQueryRow()
+
+    self.assertBigQueryInsertions(
+        [constants.BIGQUERY_TABLE.RULE], reset_mock=False)
+
+    calls = self.GetBigQueryCalls()
+    self.assertEqual(1, len(calls))
+    self.assertEqual(constants.RULE_SCOPE.LOCAL, calls[0][1].get('scope'))
+
+  def testInsertBigQueryRow_GlobalRule(self):
+
+    blockable_key = test_utils.CreateSantaBlockable().key
+    global_rule = test_utils.CreateSantaRule(blockable_key)
+    global_rule.InsertBigQueryRow()
+
+    self.assertBigQueryInsertions(
+        [constants.BIGQUERY_TABLE.RULE], reset_mock=False)
+
+    calls = self.GetBigQueryCalls()
+    self.assertEqual(1, len(calls))
+    self.assertEqual(constants.RULE_SCOPE.GLOBAL, calls[0][1].get('scope'))
 
 
 if __name__ == '__main__':

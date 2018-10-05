@@ -15,45 +15,18 @@
 """Tests for model utils."""
 
 import datetime
+import itertools
+import math
+
+import mock
 
 from google.appengine.api import datastore_errors
 from google.appengine.ext import ndb
 from google.appengine.ext.ndb import polymodel
 
 from upvote.gae.datastore import utils
-from upvote.gae.shared.common import basetest
-
-
-class SingletonTest(basetest.UpvoteTestCase):
-
-  def setUp(self):
-    super(SingletonTest, self).setUp()
-
-  def testGetAndSet(self):
-
-    class A(utils.Singleton):
-      a = ndb.StringProperty()
-
-    self.assertIsNone(A.GetInstance())
-
-    inst = A.SetInstance(a='abcd')
-    self.assertEqual('abcd', inst.a)
-
-    inst = A.GetInstance()
-    self.assertEqual('abcd', inst.a)
-    self.assertEqual('A', A.GetInstance().key.id())
-
-  def testOverrideGetId(self):
-
-    class A(utils.Singleton):
-      a = ndb.StringProperty()
-
-      @classmethod
-      def _GetId(cls):
-        return '1'
-
-    inst = A.SetInstance(a='abcd')
-    self.assertEqual('1', inst.key.id())
+from upvote.gae.lib.testing import basetest
+from upvote.shared import constants
 
 
 class CopyEntityTest(basetest.UpvoteTestCase):
@@ -384,9 +357,6 @@ class DeletePropertyTest(basetest.UpvoteTestCase):
 
 class DeletePropertyValueTest(basetest.UpvoteTestCase):
 
-  def setUp(self):
-    super(DeletePropertyValueTest, self).setUp()
-
   def testDeleteValue(self):
 
     # Initial schema
@@ -479,6 +449,27 @@ class DeletePropertyValueTest(basetest.UpvoteTestCase):
     self.assertIsNotNone(inst.a)
 
 
+class HasValueTest(basetest.UpvoteTestCase):
+
+  def testHasValue(self):
+
+    class Foo(ndb.Model):
+      a = ndb.ComputedProperty(lambda self: 'a')
+      b = ndb.StringProperty()
+
+    foo = Foo()
+    self.assertFalse(utils.HasValue(foo, 'a'))
+    self.assertFalse(utils.HasValue(foo, 'b'))
+
+    foo.b = 'b'
+    self.assertFalse(utils.HasValue(foo, 'a'))
+    self.assertTrue(utils.HasValue(foo, 'b'))
+
+    foo.put()
+    self.assertTrue(utils.HasValue(foo, 'a'))
+    self.assertTrue(utils.HasValue(foo, 'b'))
+
+
 class GetLocalComputedPropertyValueTest(basetest.UpvoteTestCase):
 
   def setUp(self):
@@ -508,6 +499,42 @@ class GetLocalComputedPropertyValueTest(basetest.UpvoteTestCase):
       utils.GetLocalComputedPropertyValue(self.inst, 'a')
 
 
+class KeyHasAncestorTest(basetest.UpvoteTestCase):
+
+  def testKeyHasAncestor(self):
+    self.assertFalse(utils.KeyHasAncestor(ndb.Key('A', 1), ndb.Key('A', 1)))
+    self.assertTrue(
+        utils.KeyHasAncestor(ndb.Key('A', 1, 'B', 2), ndb.Key('A', 1)))
+    self.assertFalse(
+        utils.KeyHasAncestor(ndb.Key('A', 1, 'B', 2), ndb.Key('A', 2)))
+    self.assertFalse(
+        utils.KeyHasAncestor(ndb.Key('A', 1, 'B', 2), ndb.Key('A', 1, 'B', 2)))
+    self.assertTrue(
+        utils.KeyHasAncestor(
+            ndb.Key('A', 1, 'B', 2, 'C', 3), ndb.Key('A', 1, 'B', 2)))
+
+
+class ConcatenateKeysTest(basetest.UpvoteTestCase):
+
+  def testSuccess(self):
+    keys = [ndb.Key('A', 1, 'B', 2), ndb.Key('C', 3)]
+    self.assertEqual(
+        ndb.Key('A', 1, 'B', 2, 'C', 3), utils.ConcatenateKeys(*keys))
+
+  def testEmpty(self):
+    self.assertIsNone(utils.ConcatenateKeys())
+
+
+class GetKeyFromUrlsafeTest(basetest.UpvoteTestCase):
+
+  def testSuccess(self):
+    key = ndb.Key('A', 'a', 'B', 'b')
+    self.assertEqual(key, utils.GetKeyFromUrlsafe(key.urlsafe()))
+
+  def testError(self):
+    self.assertIsNone(utils.GetKeyFromUrlsafe('not a real ndb key string'))
+
+
 class FutureFactoryTest(basetest.UpvoteTestCase):
 
   def testInTxn(self):
@@ -521,6 +548,20 @@ class FutureFactoryTest(basetest.UpvoteTestCase):
       fut.get_result()
 
     ndb.transaction(RunAssert)
+
+
+class GetNoOpFutureTest(basetest.UpvoteTestCase):
+
+  def testNone(self):
+    future = utils.GetNoOpFuture()
+    self.assertTrue(future.done())
+    self.assertIsNone(future.get_result())
+
+  def testResult(self):
+    result = 'foobar'
+    future = utils.GetNoOpFuture(result)
+    self.assertTrue(future.done())
+    self.assertEqual(result, future.get_result())
 
 
 class GetMultiFutureTest(basetest.UpvoteTestCase):
@@ -571,113 +612,98 @@ class GetMultiFutureTest(basetest.UpvoteTestCase):
       mf.add_dependent(ndb.Future())
 
 
-class GetChainingMultiFutureTest(basetest.UpvoteTestCase):
-
-  def testNoInput(self):
-    mf = utils.GetChainingMultiFuture([])
-    self.assertTrue(mf.done())
-
-  def testSingleFuture(self):
-    f = ndb.Future()
-    mf = utils.GetChainingMultiFuture([f])
-
-    self.assertFalse(f.done())
-    self.assertFalse(mf.done())
-
-    f.set_result([])
-
-    self.assertTrue(f.done())
-    self.assertFalse(mf.done())
-
-    # Event loop must run for the MultiFuture to be marked as done.
-    mf.wait()
-
-    self.assertTrue(mf.done())
-    self.assertEqual([], mf.get_result())
-
-  def testManyFutures(self):
-    futures = [ndb.Future() for _ in xrange(3)]
-    mf = utils.GetChainingMultiFuture(futures)
-
-    self.assertFalse(any(f.done() for f in futures))
-    self.assertFalse(mf.done())
-
-    for i, f in enumerate(futures):
-      f.set_result([i])
-
-    self.assertTrue(all(f.done() for f in futures))
-    self.assertFalse(mf.done())
-
-    # Event loop must run for the MultiFuture to be marked as done.
-    mf.wait()
-
-    self.assertTrue(mf.done())
-    self.assertEqual([0, 1, 2], mf.get_result())
-
-  def testCantModifyResult(self):
-    f = ndb.Future()
-    mf = utils.GetChainingMultiFuture([f])
-    with self.assertRaises(RuntimeError):
-      mf.add_dependent(ndb.Future())
+class TestModel(ndb.Model):
+  foo = ndb.StringProperty()
+  bar = ndb.IntegerProperty()
 
 
-class OtherUtilsTest(basetest.UpvoteTestCase):
+def CreateEntity(foo='foo', bar=0):
+  entity = TestModel(foo=foo, bar=bar)
+  entity.put()
+  return entity
 
-  def testHasValue(self):
 
-    class Foo(ndb.Model):
-      a = ndb.ComputedProperty(lambda self: 'a')
-      b = ndb.StringProperty()
+def CreateEntities(count, **kwargs):
+  return [CreateEntity(**kwargs) for _ in xrange(count)]
 
-    foo = Foo()
-    self.assertFalse(utils.HasValue(foo, 'a'))
-    self.assertFalse(utils.HasValue(foo, 'b'))
 
-    foo.b = 'b'
-    self.assertFalse(utils.HasValue(foo, 'a'))
-    self.assertTrue(utils.HasValue(foo, 'b'))
+_GLOBAL_CBK_MOCK = mock.MagicMock()
 
-    foo.put()
-    self.assertTrue(utils.HasValue(foo, 'a'))
-    self.assertTrue(utils.HasValue(foo, 'b'))
 
-  def testKeyHasAncestor(self):
-    self.assertFalse(utils.KeyHasAncestor(ndb.Key('A', 1), ndb.Key('A', 1)))
-    self.assertTrue(
-        utils.KeyHasAncestor(ndb.Key('A', 1, 'B', 2), ndb.Key('A', 1)))
-    self.assertFalse(
-        utils.KeyHasAncestor(ndb.Key('A', 1, 'B', 2), ndb.Key('A', 2)))
-    self.assertFalse(
-        utils.KeyHasAncestor(ndb.Key('A', 1, 'B', 2), ndb.Key('A', 1, 'B', 2)))
-    self.assertTrue(
-        utils.KeyHasAncestor(
-            ndb.Key('A', 1, 'B', 2, 'C', 3), ndb.Key('A', 1, 'B', 2)))
+def CallMock(*args, **kwargs):
+  _GLOBAL_CBK_MOCK(*args, **kwargs)
 
-  def testConcatenateKeys(self):
-    keys = [ndb.Key('A', 1, 'B', 2), ndb.Key('C', 3)]
-    self.assertEqual(
-        ndb.Key('A', 1, 'B', 2, 'C', 3), utils.ConcatenateKeys(*keys))
 
-  def testConcatenateKeys_Empty(self):
-    self.assertIsNone(utils.ConcatenateKeys())
+def GetKey(key):
+  return key.get()
 
-  def testGetKeyFromUrlsafe(self):
-    key = ndb.Key('A', 'a', 'B', 'b')
-    self.assertEqual(key, utils.GetKeyFromUrlsafe(key.urlsafe()))
 
-  def testGetKeyFromUrlsafe_Error(self):
-    self.assertIsNone(utils.GetKeyFromUrlsafe('not a real ndb key string'))
+def ReturnFoo(entity):
+  return entity.foo
 
-  def testGetNoOpFuture(self):
-    future = utils.GetNoOpFuture()
-    self.assertTrue(future.done())
-    self.assertIsNone(future.get_result())
 
-  def testGetNoOpFuture_Result(self):
-    result = 'foobar'
-    future = utils.GetNoOpFuture(result)
-    self.assertTrue(future.done())
-    self.assertEqual(result, future.get_result())
+def ReturnBar(entity):
+  return entity.bar
+
+
+class PaginateTest(basetest.UpvoteTestCase):
+
+  def testSuccess(self):
+
+    page_size = 10
+    for entity_count in xrange(50):
+
+      # Create some number of entities.
+      CreateEntities(entity_count)
+
+      # Verify that we get the expected number of pages.
+      pages = list(utils.Paginate(TestModel.query(), page_size=page_size))
+      expected_page_count = int(math.ceil(float(entity_count) / page_size))
+      self.assertEqual(expected_page_count, len(pages))
+
+      # Verify that we get the expected number of entities.
+      entities = list(itertools.chain(*pages))
+      self.assertEqual(entity_count, len(entities))
+
+      # Delete everything.
+      for entity in entities:
+        entity.key.delete()
+
+
+class QueuedPaginatedBatchApply(basetest.UpvoteTestCase):
+
+  def tearDown(self):
+    super(QueuedPaginatedBatchApply, self).tearDown()
+    _GLOBAL_CBK_MOCK.reset_mock()
+
+  def testSuccess(self):
+    entities = CreateEntities(3)
+    utils.QueuedPaginatedBatchApply(
+        TestModel.query(), CallMock, page_size=2)
+
+    for _ in xrange(3):
+      self.assertTaskCount(constants.TASK_QUEUE.DEFAULT, 1)
+      self.RunDeferredTasks()
+
+    self.assertTaskCount(constants.TASK_QUEUE.DEFAULT, 0)
+
+    self.assertTrue(_GLOBAL_CBK_MOCK.called_with(entities[:2]))
+    self.assertTrue(_GLOBAL_CBK_MOCK.called_with(entities[2:]))
+    self.assertEqual(2, _GLOBAL_CBK_MOCK.call_count)
+
+  def testExtraArgs(self):
+    entities = CreateEntities(1)
+    utils.QueuedPaginatedBatchApply(
+        TestModel.query(), CallMock, extra_args=['a', 'b'],
+        extra_kwargs={'c': 'c'})
+
+    for _ in xrange(2):
+      self.assertTaskCount(constants.TASK_QUEUE.DEFAULT, 1)
+      self.RunDeferredTasks()
+
+    self.assertTaskCount(constants.TASK_QUEUE.DEFAULT, 0)
+
+    self.assertTrue(_GLOBAL_CBK_MOCK.called_with(entities, 'a', 'b', c='c'))
 
 
 if __name__ == '__main__':

@@ -18,20 +18,12 @@ import datetime
 
 from google.appengine.ext import ndb
 
+from upvote.gae.bigquery import tables
+from upvote.gae.datastore import utils as datastore_utils
 from upvote.gae.datastore.models import base
-from upvote.gae.datastore.models import bigquery
-from upvote.gae.shared.common import query_utils
+from upvote.gae.datastore.models import mixin
+from upvote.gae.datastore.models import user as user_models
 from upvote.shared import constants
-
-
-class SantaModelMixin(base.BaseModelMixin):
-  """Mix-in for Santa model common code."""
-
-  def GetPlatformName(self):
-    return constants.PLATFORM.MACOS
-
-  def GetClientName(self):
-    return constants.CLIENT.SANTA
 
 
 class QuarantineMetadata(ndb.Model):
@@ -49,7 +41,7 @@ class QuarantineMetadata(ndb.Model):
   agent_bundle_id = ndb.StringProperty()
 
 
-class SantaEvent(SantaModelMixin, base.Event):
+class SantaEvent(mixin.Santa, base.Event):
   """An event from Santa.
 
   Attributes:
@@ -96,7 +88,7 @@ class SantaEvent(SantaModelMixin, base.Event):
       self.quarantine = earlier_event.quarantine
 
 
-class SantaBlockable(SantaModelMixin, base.Binary):
+class SantaBlockable(mixin.Santa, base.Binary):
   """An binary that has been blocked by Santa.
 
   key = hash of blockable
@@ -111,38 +103,24 @@ class SantaBlockable(SantaModelMixin, base.Binary):
   # DEPRECATED
   cert_sha256 = ndb.StringProperty()  # Use base.Binary.cert_key
 
-  def PersistRow(self, action, timestamp=None):
-    if timestamp is None:
-      timestamp = datetime.datetime.now()
-    bigquery.BinaryRow.DeferCreate(
-        sha256=self.key.id(),
-        timestamp=timestamp,
-        action=action,
-        state=self.state,
-        score=self.score,
-        platform=self.GetPlatformName(),
-        client=self.GetClientName(),
-        first_seen_file_name=self.file_name,
-        cert_fingerprint=self.cert_id)
-
   @property
   def cert_id(self):
     return (self.cert_key and self.cert_key.id()) or self.cert_sha256
 
   def IsVotingAllowed(self, current_user=None):
     """Method to check if voting is allowed."""
-    current_user = current_user or base.User.GetOrInsert()
+    current_user = current_user or user_models.User.GetOrInsert()
 
     # Voting is not allowed if the binary is signed by a blacklisted cert if the
     # user is not an admin.
     if not current_user.is_admin and self.cert_id:
       cert = SantaCertificate.get_by_id(self.cert_id)
-      # pylint: disable=g-explicit-bool-comparison
+      # pylint: disable=g-explicit-bool-comparison, singleton-comparison
       cert_rules = base.Rule.query(
           base.Rule.in_effect == True,
           base.Rule.policy == constants.RULE_POLICY.BLACKLIST,
           ancestor=cert.key)
-      # pylint: enable=g-explicit-bool-comparison
+      # pylint: enable=g-explicit-bool-comparison, singleton-comparison
       if cert_rules.count() > 0:
         return (False, constants.VOTING_PROHIBITED_REASONS.BLACKLISTED_CERT)
 
@@ -150,7 +128,7 @@ class SantaBlockable(SantaModelMixin, base.Binary):
         current_user=current_user)
 
 
-class SantaCertificate(SantaModelMixin, base.Certificate):
+class SantaCertificate(mixin.Santa, base.Certificate):
   """A certificate used to codesign at least one SantaBlockable.
 
   key = SHA-256 hash of certificate
@@ -168,23 +146,20 @@ class SantaCertificate(SantaModelMixin, base.Certificate):
   valid_from_dt = ndb.DateTimeProperty()
   valid_until_dt = ndb.DateTimeProperty()
 
-  def PersistRow(self, action, timestamp=None):
-    if timestamp is None:
-      timestamp = datetime.datetime.now()
-    bigquery.CertificateRow.DeferCreate(
-        fingerprint=self.key.id(),
-        timestamp=timestamp,
-        action=action,
-        common_name=self.common_name,
-        organization=self.organization,
-        organizational_unit=self.organizational_unit,
-        not_before=self.valid_from_dt,
-        not_after=self.valid_until_dt,
-        state=self.state,
-        score=self.score)
+  def InsertBigQueryRow(self, action, **kwargs):
+
+    defaults = {
+        'not_before': self.valid_from_dt,
+        'not_after': self.valid_until_dt,
+        'common_name': self.common_name,
+        'organization': self.organization,
+        'organizational_unit': self.organizational_unit}
+    defaults.update(kwargs.copy())
+
+    super(SantaCertificate, self).InsertBigQueryRow(action, **defaults)
 
 
-class SantaBundleBinary(SantaModelMixin, ndb.Model):
+class SantaBundleBinary(mixin.Santa, ndb.Model):
   """A binary appearing in a bundle."""
   blockable_key = ndb.KeyProperty()
   rel_path = ndb.StringProperty()
@@ -212,7 +187,7 @@ class SantaBundleBinary(SantaModelMixin, ndb.Model):
     return result
 
 
-class SantaBundle(SantaModelMixin, base.Package):
+class SantaBundle(mixin.Santa, base.Package):
   """A macOS Bundle representing 1 or more SantaBlockables.
 
   key = the 'bundle hash' defined as the hash of the hashes of all binaries
@@ -270,17 +245,19 @@ class SantaBundle(SantaModelMixin, base.Package):
   # Overrides base.Blockable.score to suppress score calculation during upload.
   score = ndb.ComputedProperty(_CalculateScore)
 
-  def PersistRow(self, action, timestamp=None):
-    if timestamp is None:
-      timestamp = datetime.datetime.now()
-    bigquery.BundleRow.DeferCreate(
-        bundle_hash=self.key.id(),
-        timestamp=timestamp,
-        action=action,
-        bundle_id=self.bundle_id,
-        version=self.version,
-        state=self.state,
-        score=self.score)
+  def InsertBigQueryRow(self, action, **kwargs):
+
+    defaults = {
+        'bundle_hash': self.key.id(),
+        'timestamp': datetime.datetime.utcnow(),
+        'action': action,
+        'bundle_id': self.bundle_id,
+        'version': self.version,
+        'state': self.state,
+        'score': self.score}
+    defaults.update(kwargs.copy())
+
+    tables.BUNDLE.InsertRow(**defaults)
 
   @property
   def has_been_uploaded(self):
@@ -312,7 +289,7 @@ class SantaBundle(SantaModelMixin, base.Package):
     query = SantaBundleBinary.query(ancestor=self.key)
     futures = [
         self._PageHasFlaggedBinary(page)
-        for page in query_utils.Paginate(query, page_size=1000)]
+        for page in datastore_utils.Paginate(query, page_size=1000)]
     return any(future.get_result() for future in futures)
 
   @classmethod
@@ -331,7 +308,7 @@ class SantaBundle(SantaModelMixin, base.Package):
         ancestor=self.key)
     futures = [
         self._PageHasFlaggedCert(page)
-        for page in query_utils.Paginate(query, page_size=1000)]
+        for page in datastore_utils.Paginate(query, page_size=1000)]
     return any(future.get_result() for future in futures)
 
   def IsVotingAllowed(self, current_user=None, enable_flagged_checks=True):
@@ -340,7 +317,7 @@ class SantaBundle(SantaModelMixin, base.Package):
     if not self.has_been_uploaded:
       return (False, constants.VOTING_PROHIBITED_REASONS.UPLOADING_BUNDLE)
 
-    current_user = current_user or base.User.GetOrInsert()
+    current_user = current_user or user_models.User.GetOrInsert()
 
     # Allow the flagged checks to be suppressed in situations where, for
     # instance, this call must be made from within a transaction.
@@ -359,7 +336,7 @@ class SantaBundle(SantaModelMixin, base.Package):
     return result
 
 
-class SantaHost(SantaModelMixin, base.Host):
+class SantaHost(mixin.Santa, base.Host):
   """A host running Santa that has interacted with Upvote.
 
   key = Mac Hardware UUID
@@ -402,6 +379,8 @@ class SantaHost(SantaModelMixin, base.Host):
   directory_whitelist_regex = ndb.StringProperty()
   directory_blacklist_regex = ndb.StringProperty()
 
+  transitive_whitelisting_enabled = ndb.BooleanProperty(default=False)
+
   rule_sync_dt = ndb.DateTimeProperty()
 
   @property
@@ -440,6 +419,14 @@ class SantaHost(SantaModelMixin, base.Host):
 
     return list(ids_where_primary_user | ids_when_logged_in)
 
+  @classmethod
+  @ndb.transactional
+  def ChangeClientMode(cls, host_id, new_client_mode):
+    host = cls.get_by_id(host_id)
+    host.client_mode_lock = True
+    host.client_mode = new_client_mode
+    host.put()
+
   def IsAssociatedWithUser(self, user):
     """Returns whether the given user is associated with this host."""
 
@@ -453,7 +440,7 @@ class SantaHost(SantaModelMixin, base.Host):
     return query.get(keys_only=True) is not None
 
 
-class SantaLogFile(SantaModelMixin, ndb.Model):
+class SantaLogFile(mixin.Santa, ndb.Model):
   """Represents a Log file uploaded by Santa.
 
   Files are stored in blobstore and assumed to be uploaded
@@ -471,7 +458,7 @@ class SantaLogFile(SantaModelMixin, ndb.Model):
   upload_dt = ndb.DateTimeProperty()
 
 
-class SantaBinaryFile(SantaModelMixin, ndb.Model):
+class SantaBinaryFile(mixin.Santa, ndb.Model):
   """Represents a binary file uploaded by Santa.
 
   Files are stored in blobstore and assumed to be Mach-O executables
@@ -489,7 +476,7 @@ class SantaBinaryFile(SantaModelMixin, ndb.Model):
   upload_dt = ndb.DateTimeProperty(auto_now_add=True)
 
 
-class SantaRule(SantaModelMixin, base.Rule):
+class SantaRule(mixin.Santa, base.Rule):
   """Represents a Rule that should be downloaded by Santa clients.
 
   Attributes:

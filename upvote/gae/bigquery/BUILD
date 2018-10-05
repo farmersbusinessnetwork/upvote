@@ -14,9 +14,10 @@ py_appengine_library(
     srcs = ["tables.py"],
     deps = [
         ":monitoring",
+        "//external:gcloud_auth",
         "//external:gcloud_bigquery",
-        "//upvote/gae/datastore/models:bigquery",
         "//upvote/gae/shared/common:google_cloud_lib_fixer",
+        "//upvote/gae/shared/common:settings",
         "//upvote/shared:constants",
     ],
 )
@@ -39,9 +40,9 @@ upvote_appengine_test(
     srcs = ["tables_test.py"],
     deps = [
         ":tables",
+        "//external:gcloud_bigquery",
         "//external:mock",
-        "//upvote/gae/datastore/models:bigquery",
-        "//upvote/gae/shared/common:basetest",
+        "//upvote/gae/lib/testing:basetest",
         "//upvote/shared:constants",
         "@absl_git//absl/testing:absltest",
     ],

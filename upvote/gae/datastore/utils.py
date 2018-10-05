@@ -12,14 +12,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Module that provides utilities for ndb models."""
+"""Module containing Datastore-related utilities."""
 
 import contextlib
 import functools
 import itertools
 
+from google.appengine.ext import deferred
 from google.appengine.ext import ndb
 from google.appengine.ext.ndb import polymodel
+
+from upvote.shared import constants
+
+
+_BATCH_SIZE = 2000
+_SMALL_BATCH_SIZE = 500
 
 
 class Error(Exception):
@@ -28,31 +35,6 @@ class Error(Exception):
 
 class PropertyError(Exception):
   """Indicates an error with the provided properties."""
-
-
-class Singleton(polymodel.PolyModel):
-  """A base class to support singleton models."""
-
-  @classmethod
-  def _GetId(cls):
-    """The ID to be used for the singleton model instance.
-
-    WARNING: This must be unique to all singleton classes in the app.
-
-    Returns:
-      The string to be used as the sole ID for the model type.
-    """
-    return cls._class_name()
-
-  @classmethod
-  def GetInstance(cls):
-    return cls.get_by_id(cls._GetId())
-
-  @classmethod
-  def SetInstance(cls, **properties):
-    inst = cls(id=cls._GetId(), **properties)
-    inst.put()
-    return inst
 
 
 def CopyEntity(entity, new_key=None, new_parent=None, **updated_properties):
@@ -196,12 +178,6 @@ def GetLocalComputedPropertyValue(entity, computed_property_name):
       ndb.ComputedProperty, computed_property)._get_value(entity)
 
 
-@ndb.transactional
-def PutMultiInTransaction(entities, async_=False):
-  put_func = ndb.put_multi_async if async_ else ndb.put_multi
-  put_func(entities)
-
-
 def KeyHasAncestor(key, ancestor):
   """Return whether `ancestor` is an ancestor of key.
 
@@ -314,7 +290,7 @@ def GetNoOpFuture(result=None):
 
 
 def GetMultiFuture(futures):
-  """Constructs a ChainingMultiFuture object with `futures` as dependents.
+  """Constructs a MultiFuture object with `futures` as dependents.
 
   This is essentially a "join" on the provided futures.
 
@@ -332,18 +308,71 @@ def GetMultiFuture(futures):
   return mf
 
 
-class ChainingMultiFuture(ndb.MultiFuture):
-  """A MultiFuture which coalesces its list of results into a single list."""
+def Paginate(query, page_size=_SMALL_BATCH_SIZE, **query_options):
+  """Performs the given query and breaks the results up into batches.
 
-  def set_result(self, result):
-    result = list(itertools.chain.from_iterable(result))
-    super(ndb.MultiFuture, self).set_result(result)
+  Args:
+    query: ndb.Query, the ndb query to paginate through and collect the results.
+    page_size: int, The number of entities to request in each page.
+    **query_options: dict, Any query option keyword args to pass to the query.
+
+  Yields:
+    Lists of results from the given query, at most page_size in length.
+  """
+  results = []
+  cursor = None
+  more = True
+
+  while more:
+    # Asynchronously fetch the next page.
+    page_future = query.fetch_page_async(
+        page_size, start_cursor=cursor, **query_options)
+
+    # According to the docs, if more is True, there are *probably* more results.
+    if results:
+      yield results
+
+    results, cursor, more = page_future.get_result()
+
+  # Don't forget the last batch.
+  if results:
+    yield results
 
 
-def GetChainingMultiFuture(futures):
-  """Constructs a ChainingMultiFuture object with `futures` as dependents."""
-  mf = _FutureFactory(ChainingMultiFuture)
-  for future in futures:
-    mf.add_dependent(future)
-  mf.complete()
-  return mf
+def QueuedPaginatedBatchApply(
+    query, callback, extra_args=None, extra_kwargs=None,
+    pre_queue_callback=None, page_size=_BATCH_SIZE,
+    queue=constants.TASK_QUEUE.DEFAULT, **query_options):
+  """Applies a callback to all results of a query using a task queue."""
+  # Call the implementation function.
+  deferred.defer(
+      _QueuedPaginatedBatchApply, query, callback, extra_args, extra_kwargs,
+      pre_queue_callback, page_size, queue, _queue=queue, **query_options)
+
+
+def _QueuedPaginatedBatchApply(
+    query, callback, extra_args, extra_kwargs, pre_queue_callback, page_size,
+    queue, last_page_results=None, more=True, cursor=None, **query_options):
+  """Implementation function for QueuedPaginatedBatchApply."""
+  if extra_args is None: extra_args = []
+  if extra_kwargs is None: extra_kwargs = {}
+  if last_page_results is None: last_page_results = []
+
+  # Begin to retrieve the next page.
+  if more:
+    page_future = query.fetch_page_async(
+        page_size, start_cursor=cursor, **query_options)
+
+  # Run callback on the list of results.
+  if last_page_results:
+    callback(last_page_results, *extra_args, **extra_kwargs)
+
+  # Wait for the next page to be retrieved.
+  if more:
+    results, cursor, more = page_future.get_result()
+    queue_results = map(pre_queue_callback, results)
+    # Defer task for next page.
+    deferred.defer(
+        _QueuedPaginatedBatchApply, query, callback, extra_args, extra_kwargs,
+        pre_queue_callback, page_size, queue, last_page_results=queue_results,
+        cursor=cursor, more=more, _queue=queue, **query_options)
