@@ -77,7 +77,7 @@ SANTA_BUNDLES_ENABLED = True
 # have an effect if some authentication procedure is written.
 SANTA_CLIENT_VALIDATION = constants.VALIDATION_MODE.FAIL_CLOSED
 
-# A list of email addresses of users that will always be have the permissions of
+# A list of email addresses of users that will always have the permissions of
 # administrators.
 FAILSAFE_ADMINISTRATORS = [
     "alex@farmersbusinessnetwork.com",
@@ -109,8 +109,8 @@ VOTING_WEIGHTS = {
     constants.USER_ROLE.USER: 0,
     constants.USER_ROLE.TRUSTED_USER: 0,
     constants.USER_ROLE.SUPERUSER: 10,
-    constants.USER_ROLE.ADMINISTRATOR: 10,
     constants.USER_ROLE.SECURITY: 10,
+    constants.USER_ROLE.ADMINISTRATOR: 10,
 }
 
 # Maps elevated-privilege roles to a list of user group names.
@@ -118,8 +118,8 @@ VOTING_WEIGHTS = {
 # These groups are expanded to users (See upvote/gae/shared/common/groups.py)
 # and modified with their roles via the /cron/roles/sync cron.
 GROUP_ROLE_ASSIGNMENTS = {
-    constants.USER_ROLE.TRUSTED_USER: [],
     constants.USER_ROLE.UNTRUSTED_USER: [],
+    constants.USER_ROLE.TRUSTED_USER: [],
     constants.USER_ROLE.SUPERUSER: [],
     constants.USER_ROLE.SECURITY: [],
     constants.USER_ROLE.ADMINISTRATOR: ['admin-users'],

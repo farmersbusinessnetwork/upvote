@@ -2,9 +2,11 @@ licenses(["notice"])  # MIT
 
 py_library(
     name = "setuptools",
-    srcs = glob(["**/*.py"]),
+    srcs = glob([
+        # NOTE: We only need the pkg_resources import.
+        "pkg_resources/**/*.py",
+    ]),
     srcs_version = "PY2AND3",
-    data = glob(["*.egg-info/**"]),
     visibility = ["//visibility:public"],
     deps = [],
 )
