@@ -55,6 +55,9 @@
       <md-radio-button value="executingUser" class="md-primary">
         Executing User
       </md-radio-button>
+      <md-radio-button value="eventType" class="md-primary">
+        Event Type
+      </md-radio-button>
     </md-radio-group>
   </div>
 
@@ -63,7 +66,7 @@
     <uv-listing>
       <listing-header>
         <uv-listing-header flex-gt-md="15" flex="25">Name</uv-listing-header>
-        <uv-listing-header flex-gt-md="15" flex="25">Date</uv-listing-header>
+        <uv-listing-header flex-gt-md="15" flex="25">Last Blocked</uv-listing-header>
         <uv-listing-header flex-gt-md="15" flex="25">Type</uv-listing-header>
         <uv-listing-header flex-gt-md="15" flex="25">User</uv-listing-header>
         <uv-listing-header hide show-gt-md flex="15">Filename</uv-listing-header>
@@ -72,13 +75,13 @@
       <listing-body>
         <uv-listing-row on-select="eventCtrl.selectItem(item.key)" ng-repeat="item in eventCtrl.content">
           <uv-listing-cell>{{item.fileName}}</uv-listing-cell>
-          <uv-listing-cell>{{item.occurredDt | date:'mediumDate'}}</uv-listing-cell>
+          <uv-listing-cell>{{item.lastBlockedDt | date:'medium'}}</uv-listing-cell>
           <uv-listing-cell>{{item.eventType}}</uv-listing-cell>
           <uv-listing-cell>{{item.executingUser}}</uv-listing-cell>
           <uv-listing-cell>{{item.publisher}}</uv-listing-cell>
           <md-tooltip layout="column">
             Filename: {{item.fileName}},
-            Date: {{item.occurredDt | date:'mediumDate'}},
+            Date: {{item.lastBlockedDt | date:'medium'}},
             {{item.occurredDt | timeSince}},
             Type: {{item.eventType}},
             Host ID: {{item.hostId | prettifyUuid}},

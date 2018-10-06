@@ -195,6 +195,12 @@ indexes:
     direction: desc
 
 - kind: Event
+  properties:
+  - name: event_type
+  - name: last_blocked_dt
+    direction: desc
+
+- kind: Event
   ancestor: yes
   properties:
   - name: blockable_key

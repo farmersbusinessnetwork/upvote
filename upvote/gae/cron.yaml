@@ -27,11 +27,11 @@ cron:
 #~~~ 
 #### END:daily_backup ####
 #### BEGIN:groups ####
-#~~~ - description: Sync members of external groups to roles in Upvote.
-#~~~   url: /cron/roles/sync
-#~~~   schedule: every 1 hours
-#~~~   target: upvote-app
-#~~~ 
+- description: Sync members of external groups to roles in Upvote.
+  url: /cron/roles/sync
+  schedule: every 1 hours
+  target: upvote-app
+
 #### END:groups ####
 #### BEGIN:santa ####
 #~~~ - description: Lock down all hosts of users in lockdown group.
