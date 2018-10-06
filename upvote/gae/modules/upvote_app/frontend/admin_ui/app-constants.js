@@ -24,7 +24,7 @@ goog.provide('upvote.admin.app.constants');
  * @const {string}
  */
 // clang-format off
-upvote.admin.app.constants.USER_EMAIL_DOMAIN = 'todo-example-domain.com';
+upvote.admin.app.constants.USER_EMAIL_DOMAIN = 'farmersbusinessnetwork.com';
 // clang-format on
 
 
