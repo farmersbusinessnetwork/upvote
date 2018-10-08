@@ -81,7 +81,11 @@ py_appengine_library(
 py_appengine_library(
     name = "monitoring",
     srcs = ["monitoring.py"],
-    deps = ["//upvote/shared:constants"],
+    deps = [
+        "//upvote/shared:constants",
+        "//upvote/gae/datastore/models:datadog",
+        "//external:datadog"
+    ],
 )
 
 py_appengine_library(

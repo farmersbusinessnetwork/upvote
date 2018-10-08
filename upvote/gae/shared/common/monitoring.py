@@ -17,6 +17,40 @@
 import functools
 import logging
 
+from upvote.gae.datastore.models import datadog as datadog_model
+
+import datadog
+
+# datadog metric name rules: https://help.datadoghq.com/hc/en-us/articles/203764705-What-are-valid-metric-names-
+
+_dd_stats = None
+
+
+def _dd_get_stats():
+  global _dd_stats
+
+  if not _dd_stats:
+    dd_api_key = datadog_model.DataDogApiAuth.GetInstance()
+    if not dd_api_key:
+      return None
+
+    datadog.initialize(dd_api_key)
+
+    _dd_stats = datadog.ThreadStats()
+    _dd_stats.start()
+
+  return _dd_stats
+
+
+def _dd_get_format(metric, fields):
+  stat_format = metric.metric_name
+  if not fields:
+    return stat_format
+
+  for (field_name, field_type) in fields:
+    stat_format += u"." + field_name + u"%s"
+  return stat_format
+
 
 def ContainExceptions(func):
 
@@ -38,11 +72,13 @@ class Metric(object):
     self.metric_name = metric.metric_name
     self.type_ = value_type
     self.fields = fields
+    self._stat_format = _dd_get_format(metric, fields)
 
   @ContainExceptions
   def Set(self, value, *args):
-    # <Your code here>Implement setting a metric</Your code here>
-    pass
+    stats = _dd_get_stats()
+    if stats:
+      stats.gauge(self._stat_format % args, value)
 
 
 class LatencyMetric(object):
@@ -52,11 +88,13 @@ class LatencyMetric(object):
     self.display_name = metric.display_name
     self.metric_name = metric.metric_name
     self.fields = fields
+    self._stat_format = _dd_get_format(metric, fields)
 
   @ContainExceptions
   def Record(self, value, *args):
-    # <Your code here>Implement recording a latency value</Your code here>
-    pass
+    stats = _dd_get_stats()
+    if stats:
+      stats.gauge(self._stat_format % args, value)
 
 
 class Counter(object):
@@ -66,16 +104,17 @@ class Counter(object):
     self.display_name = metric.display_name
     self.metric_name = metric.metric_name
     self.fields = fields
+    self._stat_format = _dd_get_format(metric, fields)
 
   @ContainExceptions
   def Increment(self, *args):
-    # <Your code here>Implement incrementing a metric</Your code here>
-    pass
+    stats = _dd_get_stats()
+    if stats:
+      stats.increment(self._stat_format % args)
 
   @ContainExceptions
   def IncrementBy(self, inc, *args):
-    # <Your code here>Implement incrementing a metric by N</Your code here>
-    pass
+    _dd_get_stats().increment(self._stat_format % args, inc)
 
 
 class RequestCounter(Counter):

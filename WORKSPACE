@@ -501,3 +501,19 @@ new_git_repository(
     commit = "042f812382aa16eada6078594582150fa5dc7235",
     remote = "https://github.com/eberlitz/material-steppers.git",
 )
+
+# FBN
+new_http_archive(
+    name = "datadog_archive",
+    build_file = "//third_party:datadog.BUILD",
+    sha256 = "86cef95acd73543d18c417f1b0313c0a7274ed8f5ae9cceb46314f4e588085b1",
+    strip_prefix = "datadog-0.22.0",
+    urls = [
+        "https://files.pythonhosted.org/packages/29/45/4f21ad21de22c7abe64f340e6fe1ebc412bb1e8bb580dd963fd70ac86441/datadog-0.22.0.tar.gz",
+    ],
+)
+
+bind(
+    name = "datadog",
+    actual = "@datadog_archive//:datadog",
+)
