@@ -30,11 +30,11 @@ def _dd_get_stats():
   global _dd_stats
 
   if not _dd_stats:
-    dd_api_key = datadog_model.DataDogApiAuth.GetInstance()
-    if not dd_api_key:
+    dd_api_instance = datadog_model.DataDogApiAuth.GetInstance()
+    if not dd_api_instance:
       return None
 
-    datadog.initialize(dd_api_key)
+    datadog.initialize(dd_api_instance.api_key)
 
     _dd_stats = datadog.ThreadStats()
     _dd_stats.start()
