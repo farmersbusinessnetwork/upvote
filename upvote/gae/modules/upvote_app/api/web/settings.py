@@ -22,6 +22,7 @@ from webapp2_extras import routes
 
 from upvote.gae.datastore.models import bit9
 from upvote.gae.datastore.models import virustotal
+from upvote.gae.datastore.models import datadog
 from upvote.gae.modules.upvote_app.api import monitoring
 from upvote.gae.modules.upvote_app.api.web import base
 from upvote.gae.shared.common import handlers
@@ -68,6 +69,8 @@ class ApiKeys(base.BaseHandler):
       virustotal.VirusTotalApiAuth.SetInstance(api_key=value)
     elif key_name == 'bit9':
       bit9.Bit9ApiAuth.SetInstance(api_key=value)
+    elif key_name == 'datadog':
+      datadog.DataDogApiAuth.SetInstance(api_key=value)
     else:
       self.abort(httplib.BAD_REQUEST, explanation='Invalid key name')
 

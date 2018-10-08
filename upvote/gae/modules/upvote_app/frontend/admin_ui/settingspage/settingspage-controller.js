@@ -120,6 +120,9 @@ upvote.admin.settingspage.SettingsController = class {
       if (this.scope_['bit9ApiKey'].$dirty) {
         this.saveApiKey_('bit9');
       }
+      if (this.scope_['dataDogApiKey'].$dirty) {
+        this.saveApiKey_('datadog');
+      }
     }
   }
 };
