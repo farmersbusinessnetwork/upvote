@@ -202,7 +202,8 @@ let HostController = upvote.admin.hostpage.HostController;
 /** @private {!Object<string, !upvote.admin.lib.controllers.Field>} */
 HostController.BASE_FIELDS_ = {
   'id': {'displayName': 'ID', 'value': 'id'},
-  'hostname': {'displayName': 'Hostname', 'value': 'hostname'}
+  'hostname': {'displayName': 'Hostname', 'value': 'hostname'},
+  'primary_user': {'displayName': 'Primary User', 'value': 'primary_user'}
 };
 
 });  // goog.scope

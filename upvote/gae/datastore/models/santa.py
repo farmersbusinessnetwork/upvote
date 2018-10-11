@@ -362,7 +362,6 @@ class SantaHost(mixin.Santa, base.Host):
     rule_sync_dt: dt, when last sync occurred with RuleDownload.
   """
   serial_num = ndb.StringProperty()
-  primary_user = ndb.StringProperty()
   santa_version = ndb.StringProperty()
   os_version = ndb.StringProperty()
   os_build = ndb.StringProperty()
