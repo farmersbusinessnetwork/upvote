@@ -29,8 +29,10 @@ _dd_stats = None
 def _dd_get_stats():
   global _dd_stats
 
+  dd_api_instance = datadog_model.DataDogApiAuth.GetInstance()
+  dd_api_key = dd_api_instance.api_key if dd_api_instance is not None else None
+
   if not _dd_stats:
-    dd_api_instance = datadog_model.DataDogApiAuth.GetInstance()
     if not dd_api_instance:
       return None
 
@@ -45,11 +47,11 @@ def _dd_get_stats():
 def _dd_get_format(metric, fields):
   stat_format = metric.metric_name
   if not fields:
-    return stat_format
+    return str(stat_format)
 
   for (field_name, field_type) in fields:
-    stat_format += u"." + field_name + u"%s"
-  return stat_format
+    stat_format += u"." + field_name + u".%s"
+  return str(stat_format)
 
 
 def ContainExceptions(func):
