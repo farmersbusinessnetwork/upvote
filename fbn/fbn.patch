@@ -23,6 +23,714 @@ index 7bfd85c..fbbc290 100644
 -    actual = "@datadog_archive//:datadog",
 -)
 \ No newline at end of file
+diff --git a/fbn/deploy.sh b/fbn/deploy.sh
+deleted file mode 100755
+index 58f4adf..0000000
+--- a/fbn/deploy.sh
++++ /dev/null
+@@ -1,21 +0,0 @@
+-#!/usr/bin/env bash
+-set -xeo pipefail
+-shopt -s extglob
+-
+-DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+-ROOT="${DIR}/.."
+-
+-RED='\033[0;31m'
+-NC='\033[0m' # No Color
+-
+-PROJ_ID="santaupvote"
+-
+-
+-# NOTE: this change is critical, or else for some reason all hosts end up getting reset to LOCKDOWN mode in the database
+-#        see https://github.com/google/upvote/issues/21
+-if grep -q "SANTA_DEFAULT_CLIENT_MODE = constants.SANTA_CLIENT_MODE.MONITOR" "${ROOT}/upvote/gae/shared/common/settings.py"; then
+-    # NOTE: first run needs to be done w/o anything after PROJ_ID
+-    bazel run upvote/gae:monolith_binary.deploy -- ${PROJ_ID} app.yaml santa_api.yml
+-else
+-    echo -e "${RED}Error: Branch does not contain required FBN changes!!!${NC}"
+-fi
+diff --git a/fbn/fbn.patch b/fbn/fbn.patch
+deleted file mode 100644
+index 57a71f7..0000000
+--- a/fbn/fbn.patch
++++ /dev/null
+@@ -1,675 +0,0 @@
+-diff --git a/WORKSPACE b/WORKSPACE
+-index 7bfd85c..fbbc290 100644
+---- a/WORKSPACE
+-+++ b/WORKSPACE
+-@@ -501,19 +501,3 @@ new_git_repository(
+-     commit = "042f812382aa16eada6078594582150fa5dc7235",
+-     remote = "https://github.com/eberlitz/material-steppers.git",
+- )
+--
+--# FBN
+--new_http_archive(
+--    name = "datadog_archive",
+--    build_file = "//third_party:datadog.BUILD",
+--    sha256 = "86cef95acd73543d18c417f1b0313c0a7274ed8f5ae9cceb46314f4e588085b1",
+--    strip_prefix = "datadog-0.22.0",
+--    urls = [
+--        "https://files.pythonhosted.org/packages/29/45/4f21ad21de22c7abe64f340e6fe1ebc412bb1e8bb580dd963fd70ac86441/datadog-0.22.0.tar.gz",
+--    ],
+--)
+--
+--bind(
+--    name = "datadog",
+--    actual = "@datadog_archive//:datadog",
+--)
+-\ No newline at end of file
+-diff --git a/init_project.sh b/init_project.sh
+-index 7e48b76..7744f30 100755
+---- a/init_project.sh
+-+++ b/init_project.sh
+-@@ -34,7 +34,6 @@ gcloud services enable bigquery-json.googleapis.com
+- echo Creating encryption keys used to store Upvote API secrets...
+- gcloud kms keyrings create ring --location=global
+- gcloud kms keys create virustotal --purpose=encryption --keyring=ring --location=global
+--gcloud kms keys create datadog --purpose=encryption --keyring=ring --location=global
+- 
+- echo Granting necessary permissions to App Engine...
+- SERVICE_ACCOUNT=$(gcloud iam service-accounts list --filter="App Engine app default service account" --format="value(email)")
+-diff --git a/third_party/datadog.BUILD b/third_party/datadog.BUILD
+-deleted file mode 100644
+-index b4cfdb2..0000000
+---- a/third_party/datadog.BUILD
+-+++ /dev/null
+-@@ -1,10 +0,0 @@
+--licenses(["notice"])  # datadog
+--
+--py_library(
+--    name = "datadog",
+--    srcs = glob(["**/*.py"]),
+--    srcs_version = "PY2AND3",
+--    data = glob(["*.egg-info/**"]),
+--    visibility = ["//visibility:public"],
+--    deps = [],
+--)
+-\ No newline at end of file
+-diff --git a/upvote/gae/app.yaml b/upvote/gae/app.yaml
+-index 27cfa31..f6728aa 100644
+---- a/upvote/gae/app.yaml
+-+++ b/upvote/gae/app.yaml
+-@@ -12,7 +12,7 @@
+- # See the License for the specific language governing permissions and
+- # limitations under the License.
+- 
+--application: santaupvote
+-+application: auto
+- version: auto
+- module: default
+- runtime: python27
+-diff --git a/upvote/gae/cron.yaml b/upvote/gae/cron.yaml
+-index 8c47582..83cee96 100644
+---- a/upvote/gae/cron.yaml
+-+++ b/upvote/gae/cron.yaml
+-@@ -15,16 +15,16 @@
+- cron:
+- 
+- #### BEGIN:daily_backup ####
+--#~~~ # Cron jobs handled by the upvote_app module.
+--#~~~ - description: daily datastore backup
+--#~~~   url: /cron/export/datastore-to-gcs
+--#~~~   schedule: every day 22:00
+--#~~~   retry_parameters:
+--#~~~     job_retry_limit: 3
+--#~~~     min_backoff_seconds: 300
+--#~~~   target: upvote-app
+--#~~~   timezone: US/Pacific
+--#~~~ 
+-+# Cron jobs handled by the upvote_app module.
+-+- description: daily datastore backup
+-+  url: /cron/export/datastore-to-gcs
+-+  schedule: every day 22:00
+-+  retry_parameters:
+-+    job_retry_limit: 3
+-+    min_backoff_seconds: 300
+-+  target: upvote-app
+-+  timezone: US/Pacific
+-+
+- #### END:daily_backup ####
+- #### BEGIN:groups ####
+- - description: Sync members of external groups to roles in Upvote.
+-@@ -34,61 +34,59 @@ cron:
+- 
+- #### END:groups ####
+- #### BEGIN:santa ####
+--#~~~ - description: Lock down all hosts of users in lockdown group.
+--#~~~   url: /cron/roles/lock-it-down
+--#~~~   schedule: every 1 hours
+--#~~~   target: upvote-app
+--#~~~ 
+--#~~~ - description: Lock down all hosts not locked to monitor.
+--#~~~   url: /cron/roles/lock-spider
+--#~~~   schedule: every 1 hours
+--#~~~   target: upvote-app
+--#~~~ 
+--#~~~ - description: Put all hosts of users in monitor group into monitor mode.
+--#~~~   url: /cron/roles/monitor-it
+--#~~~   schedule: every 1 hours
+--#~~~   target: upvote-app
+--#~~~ 
+-+- description: Lock down all hosts of users in lockdown group.
+-+  url: /cron/roles/lock-it-down
+-+  schedule: every 1 hours
+-+  target: upvote-app
+-+
+-+- description: Lock down all hosts not locked to monitor.
+-+  url: /cron/roles/lock-spider
+-+  schedule: every 1 hours
+-+  target: upvote-app
+-+
+-+- description: Put all hosts of users in monitor group into monitor mode.
+-+  url: /cron/roles/monitor-it
+-+  schedule: every 1 hours
+-+  target: upvote-app
+-+
+- #### END:santa ####
+- #### BEGIN:bit9 ####
+-+# Cron jobs handled by the bit9_api module.
+-+- description: Sync host policies from Bit9.
+-+  url: /api/bit9/cron/update-policies
+-+  schedule: every 1 hours
+-+  target: bit9-api
+- 
+--#~~~ # Cron jobs handled by the bit9_api module.
+--#~~~ - description: Sync host policies from Bit9.
+--#~~~   url: /api/bit9/cron/update-policies
+--#~~~   schedule: every 1 hours
+--#~~~   target: bit9-api
+--#~~~ 
+--#~~~ - description: Attempt to commit any uncommitted/failing change sets.
+--#~~~   url: /api/bit9/cron/commit-pending-change-sets
+--#~~~   schedule: every 5 minutes
+--#~~~   target: bit9-api
+--#~~~ 
+--#~~~ - description: Counts the number of Bit9 events to be pulled.
+--#~~~   url: /api/bit9/cron/count-events-to-pull
+--#~~~   schedule: every 1 minutes
+--#~~~   retry_parameters:
+--#~~~     job_retry_limit: 0
+--#~~~   target: bit9-api
+--#~~~ 
+--#~~~ - description: Pulls events from Bit9.
+--#~~~   url: /api/bit9/cron/pull-events
+--#~~~   schedule: every 1 minutes
+--#~~~   retry_parameters:
+--#~~~     job_retry_limit: 0
+--#~~~   target: bit9-api
+--#~~~ 
+--#~~~ - description: Counts the number of _UnsyncedEvents to be processed.
+--#~~~   url: /api/bit9/cron/count-events-to-process
+--#~~~   schedule: every 1 minutes
+--#~~~   retry_parameters:
+--#~~~     job_retry_limit: 0
+--#~~~   target: bit9-api
+--#~~~ 
+--#~~~ - description: Processes _UnsyncedEvents.
+--#~~~   url: /api/bit9/cron/process-events
+--#~~~   schedule: every 1 minutes
+--#~~~   retry_parameters:
+--#~~~     job_retry_limit: 0
+--#~~~   target: bit9-api
+-+- description: Attempt to commit any uncommitted/failing change sets.
+-+  url: /api/bit9/cron/commit-pending-change-sets
+-+  schedule: every 5 minutes
+-+  target: bit9-api
+- 
+-+- description: Counts the number of Bit9 events to be pulled.
+-+  url: /api/bit9/cron/count-events-to-pull
+-+  schedule: every 1 minutes
+-+  retry_parameters:
+-+    job_retry_limit: 0
+-+  target: bit9-api
+-+
+-+- description: Pulls events from Bit9.
+-+  url: /api/bit9/cron/pull-events
+-+  schedule: every 1 minutes
+-+  retry_parameters:
+-+    job_retry_limit: 0
+-+  target: bit9-api
+-+
+-+- description: Counts the number of _UnsyncedEvents to be processed.
+-+  url: /api/bit9/cron/count-events-to-process
+-+  schedule: every 1 minutes
+-+  retry_parameters:
+-+    job_retry_limit: 0
+-+  target: bit9-api
+-+
+-+- description: Processes _UnsyncedEvents.
+-+  url: /api/bit9/cron/process-events
+-+  schedule: every 1 minutes
+-+  retry_parameters:
+-+    job_retry_limit: 0
+-+  target: bit9-api
+- #### END:bit9 ####
+-diff --git a/upvote/gae/datastore/models/BUILD b/upvote/gae/datastore/models/BUILD
+-index 112624c..7b86bb9 100644
+---- a/upvote/gae/datastore/models/BUILD
+-+++ b/upvote/gae/datastore/models/BUILD
+-@@ -23,7 +23,6 @@ py_appengine_library(
+-         ":singleton",
+-         ":tickets",
+-         ":virustotal",
+--        ":datadog",
+-     ],
+- )
+- 
+-@@ -164,15 +163,6 @@ py_appengine_library(
+-     ],
+- )
+- 
+--py_appengine_library(
+--    name = "datadog",
+--    srcs = ["datadog.py"],
+--    deps = [
+--        "//common/cloud_kms:kms_ndb",
+--        "//upvote/gae/datastore/models:singleton",
+--    ],
+--)
+--
+- py_appengine_library(
+-     name = "vote",
+-     srcs = ["vote.py"],
+-diff --git a/upvote/gae/datastore/models/base.py b/upvote/gae/datastore/models/base.py
+-index 266f96f..20c34a9 100644
+---- a/upvote/gae/datastore/models/base.py
+-+++ b/upvote/gae/datastore/models/base.py
+-@@ -480,7 +480,6 @@ class Host(mixin.Base, polymodel.PolyModel):
+-   hostname = ndb.StringProperty()
+-   recorded_dt = ndb.DateTimeProperty(auto_now_add=True)
+-   hidden = ndb.BooleanProperty(default=False)
+--  primary_user = ndb.StringProperty()
+- 
+-   def IsAssociatedWithUser(self, user):
+-     """Returns whether the given user is associated with this host.
+-diff --git a/upvote/gae/datastore/models/datadog.py b/upvote/gae/datastore/models/datadog.py
+-deleted file mode 100644
+-index 792ba39..0000000
+---- a/upvote/gae/datastore/models/datadog.py
+-+++ /dev/null
+-@@ -1,19 +0,0 @@
+--# Copyright 2018 FBN Inc. All Rights Reserved.
+--#
+--"""NDB models for DataDog interactions."""
+--
+--from common.cloud_kms import kms_ndb
+--from upvote.gae.datastore.models import singleton
+--
+--_KEY_LOC = 'global'
+--_KEY_RING = 'ring'
+--_KEY_NAME = 'datadog'
+--
+--
+--class DataDogApiAuth(singleton.Singleton):
+--  """The DataDog API key.
+--
+--  This class is intended to be a singleton as there should only be a single
+--  DataDog API key associated with a project.
+--  """
+--  api_key = kms_ndb.EncryptedBlobProperty(_KEY_NAME, _KEY_RING, _KEY_LOC)
+-diff --git a/upvote/gae/datastore/models/santa.py b/upvote/gae/datastore/models/santa.py
+-index b36ba17..4c7e8b4 100644
+---- a/upvote/gae/datastore/models/santa.py
+-+++ b/upvote/gae/datastore/models/santa.py
+-@@ -362,6 +362,7 @@ class SantaHost(mixin.Santa, base.Host):
+-     rule_sync_dt: dt, when last sync occurred with RuleDownload.
+-   """
+-   serial_num = ndb.StringProperty()
+-+  primary_user = ndb.StringProperty()
+-   santa_version = ndb.StringProperty()
+-   os_version = ndb.StringProperty()
+-   os_build = ndb.StringProperty()
+-diff --git a/upvote/gae/modules/upvote_app/api/web/BUILD b/upvote/gae/modules/upvote_app/api/web/BUILD
+-index 70dda4d..1ca79ae 100644
+---- a/upvote/gae/modules/upvote_app/api/web/BUILD
+-+++ b/upvote/gae/modules/upvote_app/api/web/BUILD
+-@@ -148,7 +148,6 @@ py_library(
+-     deps = [
+-         ":base",
+-         "//upvote/gae/datastore/models:virustotal",
+--        "//upvote/gae/datastore/models:datadog",
+-         "//upvote/gae/modules/upvote_app/api:monitoring",
+-         "//upvote/gae/shared/common:handlers",
+-         "//upvote/gae/shared/common:settings",
+-diff --git a/upvote/gae/modules/upvote_app/api/web/settings.py b/upvote/gae/modules/upvote_app/api/web/settings.py
+-index 8604ff0..6dddb2f 100644
+---- a/upvote/gae/modules/upvote_app/api/web/settings.py
+-+++ b/upvote/gae/modules/upvote_app/api/web/settings.py
+-@@ -22,7 +22,6 @@ from webapp2_extras import routes
+- 
+- from upvote.gae.datastore.models import bit9
+- from upvote.gae.datastore.models import virustotal
+--from upvote.gae.datastore.models import datadog
+- from upvote.gae.modules.upvote_app.api import monitoring
+- from upvote.gae.modules.upvote_app.api.web import base
+- from upvote.gae.shared.common import handlers
+-@@ -69,8 +68,6 @@ class ApiKeys(base.BaseHandler):
+-       virustotal.VirusTotalApiAuth.SetInstance(api_key=value)
+-     elif key_name == 'bit9':
+-       bit9.Bit9ApiAuth.SetInstance(api_key=value)
+--    elif key_name == 'datadog':
+--      datadog.DataDogApiAuth.SetInstance(api_key=value)
+-     else:
+-       self.abort(httplib.BAD_REQUEST, explanation='Invalid key name')
+- 
+-diff --git a/upvote/gae/modules/upvote_app/api/web/settings_test.py b/upvote/gae/modules/upvote_app/api/web/settings_test.py
+-index 4802c1e..003a9de 100644
+---- a/upvote/gae/modules/upvote_app/api/web/settings_test.py
+-+++ b/upvote/gae/modules/upvote_app/api/web/settings_test.py
+-@@ -80,13 +80,6 @@ class ApiKeysTest(basetest.UpvoteTestCase):
+-         self.testapp.post(self.ROUTE % 'bit9', {'value': 'abc'})
+-       mock_set.assert_called_once_with(api_key='abc')
+- 
+--  def testUpdateDataDogKey(self):
+--    with mock.patch.object(
+--        settings.datadog.DataDogApiAuth, 'SetInstance') as mock_set:
+--      with self.LoggedInUser(admin=True):
+--        self.testapp.post(self.ROUTE % 'datadog', {'value': 'abc'})
+--      mock_set.assert_called_once_with(api_key='abc')
+--
+-   def testBadValue(self):
+-     with self.LoggedInUser(admin=True):
+-       self.testapp.post(
+-diff --git a/upvote/gae/modules/upvote_app/frontend/admin_ui/app-constants.js b/upvote/gae/modules/upvote_app/frontend/admin_ui/app-constants.js
+-index 0ea1c6e..0ddc269 100644
+---- a/upvote/gae/modules/upvote_app/frontend/admin_ui/app-constants.js
+-+++ b/upvote/gae/modules/upvote_app/frontend/admin_ui/app-constants.js
+-@@ -24,7 +24,7 @@ goog.provide('upvote.admin.app.constants');
+-  * @const {string}
+-  */
+- // clang-format off
+--upvote.admin.app.constants.USER_EMAIL_DOMAIN = 'farmersbusinessnetwork.com';
+-+upvote.admin.app.constants.USER_EMAIL_DOMAIN = 'todo-example-domain.com';
+- // clang-format on
+- 
+- 
+-diff --git a/upvote/gae/modules/upvote_app/frontend/admin_ui/eventpage/events.html b/upvote/gae/modules/upvote_app/frontend/admin_ui/eventpage/events.html
+-index aea159f..d22ee59 100644
+---- a/upvote/gae/modules/upvote_app/frontend/admin_ui/eventpage/events.html
+-+++ b/upvote/gae/modules/upvote_app/frontend/admin_ui/eventpage/events.html
+-@@ -55,9 +55,6 @@
+-       <md-radio-button value="executingUser" class="md-primary">
+-         Executing User
+-       </md-radio-button>
+--      <md-radio-button value="eventType" class="md-primary">
+--        Event Type
+--      </md-radio-button>
+-     </md-radio-group>
+-   </div>
+- 
+-@@ -66,7 +63,7 @@
+-     <uv-listing>
+-       <listing-header>
+-         <uv-listing-header flex-gt-md="15" flex="25">Name</uv-listing-header>
+--        <uv-listing-header flex-gt-md="15" flex="25">Recorded</uv-listing-header>
+-+        <uv-listing-header flex-gt-md="15" flex="25">Date</uv-listing-header>
+-         <uv-listing-header flex-gt-md="15" flex="25">Type</uv-listing-header>
+-         <uv-listing-header flex-gt-md="15" flex="25">User</uv-listing-header>
+-         <uv-listing-header hide show-gt-md flex="15">Filename</uv-listing-header>
+-@@ -75,13 +72,13 @@
+-       <listing-body>
+-         <uv-listing-row on-select="eventCtrl.selectItem(item.key)" ng-repeat="item in eventCtrl.content">
+-           <uv-listing-cell>{{item.fileName}}</uv-listing-cell>
+--          <uv-listing-cell>{{item.recordedDt | date:'medium'}}</uv-listing-cell>
+-+          <uv-listing-cell>{{item.recordedDt | date:'mediumDate'}}</uv-listing-cell>
+-           <uv-listing-cell>{{item.eventType}}</uv-listing-cell>
+-           <uv-listing-cell>{{item.executingUser}}</uv-listing-cell>
+-           <uv-listing-cell>{{item.publisher}}</uv-listing-cell>
+-           <md-tooltip layout="column">
+-             Filename: {{item.fileName}},
+--            Recorded: {{item.recordedDt | date:'medium'}},
+-+            Date: {{item.recordedDt | date:'mediumDate'}},
+-             {{item.recordedDt | timeSince}},
+-             Type: {{item.eventType}},
+-             Host ID: {{item.hostId | prettifyUuid}},
+-diff --git a/upvote/gae/modules/upvote_app/frontend/admin_ui/hostpage/hostpage-controller.js b/upvote/gae/modules/upvote_app/frontend/admin_ui/hostpage/hostpage-controller.js
+-index a808810..a33d3f9 100644
+---- a/upvote/gae/modules/upvote_app/frontend/admin_ui/hostpage/hostpage-controller.js
+-+++ b/upvote/gae/modules/upvote_app/frontend/admin_ui/hostpage/hostpage-controller.js
+-@@ -202,8 +202,7 @@ let HostController = upvote.admin.hostpage.HostController;
+- /** @private {!Object<string, !upvote.admin.lib.controllers.Field>} */
+- HostController.BASE_FIELDS_ = {
+-   'id': {'displayName': 'ID', 'value': 'id'},
+--  'hostname': {'displayName': 'Hostname', 'value': 'hostname'},
+--  'primary_user': {'displayName': 'Primary User', 'value': 'primary_user'}
+-+  'hostname': {'displayName': 'Hostname', 'value': 'hostname'}
+- };
+- 
+- });  // goog.scope
+-diff --git a/upvote/gae/modules/upvote_app/frontend/admin_ui/settingspage/settings.html b/upvote/gae/modules/upvote_app/frontend/admin_ui/settingspage/settings.html
+-index fe52b1f..9fffa5f 100644
+---- a/upvote/gae/modules/upvote_app/frontend/admin_ui/settingspage/settings.html
+-+++ b/upvote/gae/modules/upvote_app/frontend/admin_ui/settingspage/settings.html
+-@@ -17,14 +17,6 @@
+-           </md-input-container>
+-         </div>
+-       </form>
+--      <form name="dataDogApiKey">
+--        <div>
+--          <md-input-container flex>
+--            <label>DataDog API Key Value</label>
+--            <input type="text" ng-model="settingsCtrl.apiKeys.datadog">
+--          </md-input-container>
+--        </div>
+--      </form>
+-     </md-content>
+-     <h3 class="md-title">Santa</h3>
+-     <md-content layout-padding class="md-whiteframe-4dp">
+-diff --git a/upvote/gae/modules/upvote_app/frontend/admin_ui/settingspage/settingspage-controller.js b/upvote/gae/modules/upvote_app/frontend/admin_ui/settingspage/settingspage-controller.js
+-index 2ba7dd4..abbaa2c 100644
+---- a/upvote/gae/modules/upvote_app/frontend/admin_ui/settingspage/settingspage-controller.js
+-+++ b/upvote/gae/modules/upvote_app/frontend/admin_ui/settingspage/settingspage-controller.js
+-@@ -19,7 +19,7 @@ goog.require('upvote.admin.settings.SettingsService');
+- goog.require('upvote.shared.Page');
+- 
+- 
+--/** @typedef {{virustotal: string, bit9:string, datadog:string}} */
+-+/** @typedef {{virustotal: string, bit9:string}} */
+- upvote.admin.settingspage.ApiKeyStruct;
+- 
+- /**
+-@@ -77,7 +77,6 @@ upvote.admin.settingspage.SettingsController = class {
+-     this.apiKeys = {
+-       'virustotal': '',
+-       'bit9': '',
+--      'datadog': '',
+-     };
+- 
+-     page.title = 'Settings';
+-@@ -121,9 +120,6 @@ upvote.admin.settingspage.SettingsController = class {
+-       if (this.scope_['bit9ApiKey'].$dirty) {
+-         this.saveApiKey_('bit9');
+-       }
+--      if (this.scope_['dataDogApiKey'].$dirty) {
+--        this.saveApiKey_('datadog');
+--      }
+-     }
+-   }
+- };
+-diff --git a/upvote/gae/shared/common/BUILD b/upvote/gae/shared/common/BUILD
+-index 9bfa668..6440bd2 100644
+---- a/upvote/gae/shared/common/BUILD
+-+++ b/upvote/gae/shared/common/BUILD
+-@@ -81,11 +81,7 @@ py_appengine_library(
+- py_appengine_library(
+-     name = "monitoring",
+-     srcs = ["monitoring.py"],
+--    deps = [
+--        "//upvote/shared:constants",
+--        "//upvote/gae/datastore/models:datadog",
+--        "//external:datadog"
+--    ],
+-+    deps = ["//upvote/shared:constants"],
+- )
+- 
+- py_appengine_library(
+-diff --git a/upvote/gae/shared/common/monitoring.py b/upvote/gae/shared/common/monitoring.py
+-index ebe1738..530c011 100644
+---- a/upvote/gae/shared/common/monitoring.py
+-+++ b/upvote/gae/shared/common/monitoring.py
+-@@ -17,42 +17,6 @@
+- import functools
+- import logging
+- 
+--from upvote.gae.datastore.models import datadog as datadog_model
+--
+--import datadog
+--
+--# datadog metric name rules: https://help.datadoghq.com/hc/en-us/articles/203764705-What-are-valid-metric-names-
+--
+--_dd_stats = None
+--
+--
+--def _dd_get_stats():
+--  global _dd_stats
+--
+--  dd_api_instance = datadog_model.DataDogApiAuth.GetInstance()
+--  dd_api_key = dd_api_instance.api_key if dd_api_instance is not None else None
+--
+--  if not _dd_stats:
+--    if not dd_api_instance:
+--      return None
+--
+--    datadog.initialize(dd_api_instance.api_key)
+--
+--    _dd_stats = datadog.ThreadStats()
+--    _dd_stats.start()
+--
+--  return _dd_stats
+--
+--
+--def _dd_get_format(metric, fields):
+--  stat_format = metric.metric_name
+--  if not fields:
+--    return str(stat_format)
+--
+--  for (field_name, field_type) in fields:
+--    stat_format += u"." + field_name + u".%s"
+--  return str(stat_format)
+--
+- 
+- def ContainExceptions(func):
+- 
+-@@ -74,13 +38,11 @@ class Metric(object):
+-     self.metric_name = metric.metric_name
+-     self.type_ = value_type
+-     self.fields = fields
+--    self._stat_format = _dd_get_format(metric, fields)
+- 
+-   @ContainExceptions
+-   def Set(self, value, *args):
+--    stats = _dd_get_stats()
+--    if stats:
+--      stats.gauge(self._stat_format % args, value)
+-+    # <Your code here>Implement setting a metric</Your code here>
+-+    pass
+- 
+- 
+- class LatencyMetric(object):
+-@@ -90,13 +52,11 @@ class LatencyMetric(object):
+-     self.display_name = metric.display_name
+-     self.metric_name = metric.metric_name
+-     self.fields = fields
+--    self._stat_format = _dd_get_format(metric, fields)
+- 
+-   @ContainExceptions
+-   def Record(self, value, *args):
+--    stats = _dd_get_stats()
+--    if stats:
+--      stats.gauge(self._stat_format % args, value)
+-+    # <Your code here>Implement recording a latency value</Your code here>
+-+    pass
+- 
+- 
+- class Counter(object):
+-@@ -106,17 +66,16 @@ class Counter(object):
+-     self.display_name = metric.display_name
+-     self.metric_name = metric.metric_name
+-     self.fields = fields
+--    self._stat_format = _dd_get_format(metric, fields)
+- 
+-   @ContainExceptions
+-   def Increment(self, *args):
+--    stats = _dd_get_stats()
+--    if stats:
+--      stats.increment(self._stat_format % args)
+-+    # <Your code here>Implement incrementing a metric</Your code here>
+-+    pass
+- 
+-   @ContainExceptions
+-   def IncrementBy(self, inc, *args):
+--    _dd_get_stats().increment(self._stat_format % args, inc)
+-+    # <Your code here>Implement incrementing a metric by N</Your code here>
+-+    pass
+- 
+- 
+- class RequestCounter(Counter):
+-diff --git a/upvote/gae/shared/common/settings.py b/upvote/gae/shared/common/settings.py
+-index 2fcfa88..789ac92 100644
+---- a/upvote/gae/shared/common/settings.py
+-+++ b/upvote/gae/shared/common/settings.py
+-@@ -28,7 +28,7 @@ from upvote.shared import constants
+- #   USER_EMAIL_DOMAIN = 'foo.com'
+- #
+- # NOTE: Must be all lowercase.
+--USER_EMAIL_DOMAIN = 'farmersbusinessnetwork.com'
+-+USER_EMAIL_DOMAIN = 'todo-example-domain.com'
+- 
+- # Whether all new applications will be checked against binary analysis service.
+- #
+-@@ -47,7 +47,7 @@ ENABLE_BINARY_ANALYSIS_PRECACHING = False
+- EVENT_CREATION = constants.EVENT_CREATION.HOST_OWNER
+- 
+- # The default execution mode for clients syncing for the first time.
+--SANTA_DEFAULT_CLIENT_MODE = constants.SANTA_CLIENT_MODE.MONITOR
+-+SANTA_DEFAULT_CLIENT_MODE = constants.SANTA_CLIENT_MODE.LOCKDOWN
+- # If provided, a regex string that matches execution paths (read: not files)
+- # from which executions will be allowed.
+- # NOTE: This regex must be written in ICU format. Docs can be found here:
+-@@ -79,10 +79,7 @@ SANTA_CLIENT_VALIDATION = constants.VALIDATION_MODE.FAIL_CLOSED
+- 
+- # A list of email addresses of users that will always have the permissions of
+- # administrators.
+--FAILSAFE_ADMINISTRATORS = [
+--    "alex@farmersbusinessnetwork.com",
+--    "amohr@farmersbusinessnetwork.com"
+--]
+-+FAILSAFE_ADMINISTRATORS = []
+- 
+- # The score thresholds beyond which a Blockable will transition to the
+- # associated state.
+-@@ -91,9 +88,9 @@ FAILSAFE_ADMINISTRATORS = [
+- # threshold (-15 by default), they become banned. If they rise above, say, the
+- # GLOBALLY_WHITELISTED threshold, they become globally whitelisted.
+- VOTING_THRESHOLDS = {
+--    constants.STATE.BANNED: -1,
+--    constants.STATE.APPROVED_FOR_LOCAL_WHITELISTING: 1,
+--    constants.STATE.GLOBALLY_WHITELISTED: 10,
+-+    constants.STATE.BANNED: -26,
+-+    constants.STATE.APPROVED_FOR_LOCAL_WHITELISTING: 5,
+-+    constants.STATE.GLOBALLY_WHITELISTED: 50,
+- }
+- 
+- # The vote weight available to a user with the associated role.
+-@@ -106,11 +103,11 @@ VOTING_THRESHOLDS = {
+- # See docs for further discussion.
+- VOTING_WEIGHTS = {
+-     constants.USER_ROLE.UNTRUSTED_USER: 0,
+--    constants.USER_ROLE.USER: 0,
+--    constants.USER_ROLE.TRUSTED_USER: 0,
+--    constants.USER_ROLE.SUPERUSER: 10,
+--    constants.USER_ROLE.SECURITY: 10,
+--    constants.USER_ROLE.ADMINISTRATOR: 10,
+-+    constants.USER_ROLE.USER: 1,
+-+    constants.USER_ROLE.TRUSTED_USER: 3,
+-+    constants.USER_ROLE.SUPERUSER: 25,
+-+    constants.USER_ROLE.SECURITY: 25,
+-+    constants.USER_ROLE.ADMINISTRATOR: 25,
+- }
+- 
+- # Maps elevated-privilege roles to a list of user group names.
+-@@ -170,9 +167,9 @@ class ProdEnv(settings_utils.DefaultEnv):
+-   """The production environment namespace."""
+-   NAME = 'Prod'
+- 
+--  HOSTNAME = 'santaupvote.appspot.com'
+--  PROJECT_ID = 'santaupvote'
+--  DATASTORE_BACKUP_BUCKET = 'santaupvote'
+-+  HOSTNAME = 'XXX-REPLACE-WITH-PROJECT-ID-XXX.appspot.com'
+-+  PROJECT_ID = 'XXX-REPLACE-WITH-PROJECT-ID-XXX'
+-+  DATASTORE_BACKUP_BUCKET = 'XXX-REPLACE-WITH-PROJECT-ID-XXX'
+- 
+-   # The address of the Bit9 frontend server from which the REST API is served.
+-   # The path /api/bit9platform/v1 at this address should display the API docs.
+-@@ -185,7 +182,7 @@ class ProdEnv(settings_utils.DefaultEnv):
+-   # BigQuery.
+-   #
+-   # See docs for complete setup instructions.
+--  ENABLE_BIGQUERY_STREAMING = True
+-+  ENABLE_BIGQUERY_STREAMING = False
+- 
+- 
+- class LocalEnv(settings_utils.DefaultEnv):
+-diff --git a/upvote/gae/utils/group_utils.py b/upvote/gae/utils/group_utils.py
+-index 4a4cd80..249955b 100644
+---- a/upvote/gae/utils/group_utils.py
+-+++ b/upvote/gae/utils/group_utils.py
+-@@ -44,10 +44,7 @@ class AbstractGroupManager(object):
+- class GroupManager(AbstractGroupManager):
+-   """An static implementation of the groups interface."""
+-   _GROUPS = {
+--      'admin-users': [
+--        "alex@farmersbusinessnetwork.com",
+--        "amohr@farmersbusinessnetwork.com"
+--      ]
+-+      'admin-users': []
+-   }
+- 
+-   def DoesGroupExist(self, groupname):
 diff --git a/init_project.sh b/init_project.sh
 index 7e48b76..7744f30 100755
 --- a/init_project.sh
