@@ -1,3 +1,2 @@
 *.py[cdo]
 bazel-*
-venv/
