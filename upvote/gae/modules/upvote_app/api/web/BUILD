@@ -148,6 +148,7 @@ py_library(
     deps = [
         ":base",
         "//upvote/gae/datastore/models:virustotal",
+        "//upvote/gae/datastore/models:datadog",
         "//upvote/gae/modules/upvote_app/api:monitoring",
         "//upvote/gae/shared/common:handlers",
         "//upvote/gae/shared/common:settings",

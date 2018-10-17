@@ -480,6 +480,7 @@ class Host(mixin.Base, polymodel.PolyModel):
   hostname = ndb.StringProperty()
   recorded_dt = ndb.DateTimeProperty(auto_now_add=True)
   hidden = ndb.BooleanProperty(default=False)
+  primary_user = ndb.StringProperty()
 
   def IsAssociatedWithUser(self, user):
     """Returns whether the given user is associated with this host.

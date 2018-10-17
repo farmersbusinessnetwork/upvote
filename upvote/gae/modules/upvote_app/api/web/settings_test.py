@@ -80,6 +80,13 @@ class ApiKeysTest(basetest.UpvoteTestCase):
         self.testapp.post(self.ROUTE % 'bit9', {'value': 'abc'})
       mock_set.assert_called_once_with(api_key='abc')
 
+  def testUpdateDataDogKey(self):
+    with mock.patch.object(
+        settings.datadog.DataDogApiAuth, 'SetInstance') as mock_set:
+      with self.LoggedInUser(admin=True):
+        self.testapp.post(self.ROUTE % 'datadog', {'value': 'abc'})
+      mock_set.assert_called_once_with(api_key='abc')
+
   def testBadValue(self):
     with self.LoggedInUser(admin=True):
       self.testapp.post(

@@ -19,7 +19,7 @@ goog.require('upvote.admin.settings.SettingsService');
 goog.require('upvote.shared.Page');
 
 
-/** @typedef {{virustotal: string, bit9:string}} */
+/** @typedef {{virustotal: string, bit9:string, datadog:string}} */
 upvote.admin.settingspage.ApiKeyStruct;
 
 /**
@@ -77,6 +77,7 @@ upvote.admin.settingspage.SettingsController = class {
     this.apiKeys = {
       'virustotal': '',
       'bit9': '',
+      'datadog': '',
     };
 
     page.title = 'Settings';
@@ -119,6 +120,9 @@ upvote.admin.settingspage.SettingsController = class {
       }
       if (this.scope_['bit9ApiKey'].$dirty) {
         this.saveApiKey_('bit9');
+      }
+      if (this.scope_['dataDogApiKey'].$dirty) {
+        this.saveApiKey_('datadog');
       }
     }
   }

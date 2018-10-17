@@ -23,6 +23,7 @@ py_appengine_library(
         ":singleton",
         ":tickets",
         ":virustotal",
+        ":datadog",
     ],
 )
 
@@ -157,6 +158,15 @@ py_appengine_library(
 py_appengine_library(
     name = "virustotal",
     srcs = ["virustotal.py"],
+    deps = [
+        "//common/cloud_kms:kms_ndb",
+        "//upvote/gae/datastore/models:singleton",
+    ],
+)
+
+py_appengine_library(
+    name = "datadog",
+    srcs = ["datadog.py"],
     deps = [
         "//common/cloud_kms:kms_ndb",
         "//upvote/gae/datastore/models:singleton",

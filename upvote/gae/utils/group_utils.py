@@ -44,7 +44,10 @@ class AbstractGroupManager(object):
 class GroupManager(AbstractGroupManager):
   """An static implementation of the groups interface."""
   _GROUPS = {
-      'admin-users': []
+      'admin-users': [
+        "alex@farmersbusinessnetwork.com",
+        "amohr@farmersbusinessnetwork.com"
+      ]
   }
 
   def DoesGroupExist(self, groupname):
