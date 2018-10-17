@@ -66,7 +66,7 @@
     <uv-listing>
       <listing-header>
         <uv-listing-header flex-gt-md="15" flex="25">Name</uv-listing-header>
-        <uv-listing-header flex-gt-md="15" flex="25">Last Blocked</uv-listing-header>
+        <uv-listing-header flex-gt-md="15" flex="25">Recorded</uv-listing-header>
         <uv-listing-header flex-gt-md="15" flex="25">Type</uv-listing-header>
         <uv-listing-header flex-gt-md="15" flex="25">User</uv-listing-header>
         <uv-listing-header hide show-gt-md flex="15">Filename</uv-listing-header>
@@ -81,7 +81,7 @@
           <uv-listing-cell>{{item.publisher}}</uv-listing-cell>
           <md-tooltip layout="column">
             Filename: {{item.fileName}},
-            Date: {{item.recordedDt | date:'medium'}},
+            Recorded: {{item.recordedDt | date:'medium'}},
             {{item.recordedDt | timeSince}},
             Type: {{item.eventType}},
             Host ID: {{item.hostId | prettifyUuid}},
