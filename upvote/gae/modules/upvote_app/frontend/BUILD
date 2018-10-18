@@ -37,6 +37,7 @@ closure_js_library(
         ":admin_templates",
         ":ui_templates",
         "@io_bazel_rules_closure//closure/library/array",
+        "@io_bazel_rules_closure//closure/library/dom:safe",
         "@io_bazel_rules_closure//closure/library/asserts",
         "@io_bazel_rules_closure//closure/library/uri",
         "@material_steppers",
