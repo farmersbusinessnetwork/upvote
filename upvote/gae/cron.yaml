@@ -12,19 +12,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# Documentation on cron schedules: https://cloud.google.com/appengine/docs/standard/python/config/cronref
+
 cron:
 
 #### BEGIN:daily_backup ####
-#~~~ # Cron jobs handled by the upvote_app module.
-#~~~ - description: daily datastore backup
-#~~~   url: /cron/export/datastore-to-gcs
-#~~~   schedule: every day 22:00
-#~~~   retry_parameters:
-#~~~     job_retry_limit: 3
-#~~~     min_backoff_seconds: 300
-#~~~   target: upvote-app
-#~~~   timezone: US/Pacific
-#~~~ 
+# Cron jobs handled by the upvote_app module.
+- description: daily datastore backup
+  url: /cron/export/datastore-to-gcs
+  schedule: every monday, wednesday 22:00
+  retry_parameters:
+    job_retry_limit: 3
+    min_backoff_seconds: 300
+  target: upvote-app
+  timezone: US/Pacific
+
 #### END:daily_backup ####
 #### BEGIN:groups ####
 - description: Sync members of external groups to roles in Upvote.
