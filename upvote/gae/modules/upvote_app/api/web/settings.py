@@ -23,10 +23,10 @@ from webapp2_extras import routes
 from upvote.gae.datastore.models import bit9
 from upvote.gae.datastore.models import virustotal
 from upvote.gae.datastore.models import datadog
-from upvote.gae.modules.upvote_app.api import monitoring
 from upvote.gae.modules.upvote_app.api.web import base
-from upvote.gae.shared.common import handlers
+from upvote.gae.modules.upvote_app.api.web import monitoring
 from upvote.gae.shared.common import settings
+from upvote.gae.utils import handler_utils
 from upvote.gae.utils import string_utils
 from upvote.gae.utils import xsrf_utils
 from upvote.shared import constants
@@ -39,7 +39,7 @@ class Settings(base.BaseHandler):
   def RequestCounter(self):
     return monitoring.setting_requests
 
-  @handlers.RecordRequest
+  @handler_utils.RecordRequest
   def get(self, setting):  # pylint: disable=g-bad-name
     """Get handler for settings."""
     logging.info('Setting requested: %s', setting)
