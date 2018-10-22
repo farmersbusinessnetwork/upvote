@@ -21,6 +21,8 @@ goog.require('upvote.admin.blockables.prettifyType');
 goog.require('upvote.admin.blockables.prettifyVotingProhibitedReason');
 goog.require('upvote.admin.blockables.uvBlockableCard');
 goog.require('upvote.admin.blockables.uvBlockableListing');
+goog.require('upvote.statechip.StateToDisplay');
+goog.require('upvote.statechip.ToUiState');
 goog.require('upvote.statechip.module');
 
 
@@ -40,6 +42,8 @@ upvote.admin.blockables.module =
         .directive(
             'uvBlockableHeader', upvote.admin.blockables.uvBlockableHeader)
         .filter('prettifyState', () => upvote.admin.blockables.prettifyState)
+        .filter('toUiState', () => upvote.statechip.ToUiState)
+        .filter('stateToDisplay', () => upvote.statechip.StateToDisplay)
         .filter(
             'prettifyVotingProhibitedReason',
             () => upvote.admin.blockables.prettifyVotingProhibitedReason)

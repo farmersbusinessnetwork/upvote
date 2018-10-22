@@ -104,21 +104,25 @@ upvote.admin.lib.controllers.ModelController = class {
   /**
    * Load search query data.
    * @param {boolean=} opt_more Whether to load more items from the last query.
+   * @return {?angular.$q.Promise} A promise that will resolve once the data is loaded.
    * @protected
    */
   loadData(opt_more) {
     if (!opt_more) {
       this.requestData['cursor'] = null;
     }
+
     let data = this.queryData['search'] ?
         Object.assign({}, this.requestData, this.queryData) :
         this.requestData;
-    this.queryResource['search'](data)['$promise'].then((results) => {
+
+    return this.queryResource['search'](data)['$promise'].then((results) => {
       this.content = opt_more ? this.content.concat(results['content']) :
                                 results['content'];
       this.requestData['cursor'] = results['cursor'];
       this.requestData['more'] = results['more'];
       this.requestData['perPage'] = results['perPage'];
+      return results['content'];
     });
   }
 

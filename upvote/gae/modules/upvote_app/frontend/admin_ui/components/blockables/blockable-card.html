@@ -60,7 +60,7 @@
       Flagged: {{ card.flagged }}
     </div>
     <div>
-      State: {{ card.state | prettifyState }}
+      State: {{ card.state | toUiState: card.vote:card.cert | stateToDisplay }}
     </div>
     <div>
       Last Changed State: {{ card.stateChangeDt }}

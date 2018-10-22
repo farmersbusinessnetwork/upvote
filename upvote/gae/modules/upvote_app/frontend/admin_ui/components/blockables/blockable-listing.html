@@ -8,7 +8,7 @@
   <uv-listing-cell>{{ item.occurredDt | date:'mediumDate' }}</uv-listing-cell>
   <uv-listing-cell>{{item.score}}</uv-listing-cell>
   <uv-listing-cell ng-if="type != 'TRENDING_ALLOWED'">
-    <uv-state-chip state="item.state"></uv-state-chip>
+    <uv-state-chip state="item.state" vote="item.vote" cert="item.cert" is-pending="item.isPending"></uv-state-chip>
   </uv-listing-cell>
   <uv-listing-cell ng-if="type == 'TRENDING_ALLOWED'">{{item.count}}</uv-listing-cell>
   <md-tooltip>
