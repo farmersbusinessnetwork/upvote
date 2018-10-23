@@ -91,16 +91,17 @@ upvote.admin.blockablepage.BlockableController = class extends ModelController {
       }
 
       results.forEach(function(item) {
-          if (!!item['certId']) {
-              resource
-                  .get({'id': item['certId']})['$promise']
-                  .then((cert) => {
-                      item.cert = cert;
-                  })
-                  .catch((response) => {
-                      this.errorService_.createToastFromError(response);
-                  });
-          }
+        item.class_name = item.class_[1];
+        if (!!item['certId']) {
+            resource
+                .get({'id': item['certId']})['$promise']
+                .then((cert) => {
+                    item.cert = cert;
+                })
+                .catch((response) => {
+                    this.errorService_.createToastFromError(response);
+                });
+        }
       });
     });
   }
