@@ -3,7 +3,7 @@
 }
 
 .uv-listing-cell {
-  margin: 8px;
+  margin: 0px;
   overflow: hidden;
   text-overflow: ellipsis;
   background-color: transparent;

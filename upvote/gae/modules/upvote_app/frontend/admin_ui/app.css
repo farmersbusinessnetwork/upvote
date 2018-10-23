@@ -11,3 +11,18 @@ body {
   padding-bottom: 10%;
   height: 100%;
 }
+
+md-checkbox {
+  margin-bottom: initial;
+}
+
+md-list-item {
+  min-height: initial;
+}
+md-button {
+  line-height: initial;
+}
+
+md-list-item::before, md-list-item .md-list-item-inner::before {
+  min-height: initial;
+}
