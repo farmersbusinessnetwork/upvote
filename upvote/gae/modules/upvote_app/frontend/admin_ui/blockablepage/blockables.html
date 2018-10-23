@@ -131,7 +131,7 @@
       </listing-header>
       <listing-body>
         <uv-blockable-listing ng-repeat="item in blockableCtrl.content" item="item"
-          on-selected="blockableCtrl.selectItem(item.id)">
+          on-selected="blockableCtrl.selectItem(item.id, true)">
         </uv-blockable-listing>
       </listing-body>
     </uv-listing>

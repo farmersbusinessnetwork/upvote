@@ -157,11 +157,16 @@ upvote.admin.lib.controllers.ModelController = class {
   /**
    * Loads the selected record as a card.
    * @param {string} id The id of the selected item.
+   * @param {boolean} skipUpdateUrl set to true to skip an updateItemUrl call
    * @export
    */
-  selectItem(id) {
+  selectItem(id, skipUpdateUrl) {
     this.id = id;
-    this.updateItemUrl_();
+
+    if(!skipUpdateUrl) {
+        this.updateItemUrl_();
+    }
+
     this.loadCard();
   }
 
