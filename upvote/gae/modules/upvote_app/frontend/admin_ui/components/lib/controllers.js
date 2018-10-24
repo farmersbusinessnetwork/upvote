@@ -196,6 +196,10 @@ upvote.admin.lib.controllers.ModelController = class {
         }
         this.card['save']();
       };
+      // Add function to select item
+      this.card['selectItem'] = (id, skipUpdateUrl) => {
+        return this.selectItem(id, skipUpdateUrl);
+      };
     });
   }
 

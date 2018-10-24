@@ -43,7 +43,7 @@
     </div>
     <div ng-show="card.certId">
       Cert Hash:
-      <a href="/admin/blockables/{{ card.certId }}">
+      <a href ng-click="card.selectItem(card.certId, true)">
         {{ card.certId }}
       </a>
     </div>
