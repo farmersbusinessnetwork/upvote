@@ -13,7 +13,7 @@
 // limitations under the License.
 
 goog.provide('upvote.admin.events.module');
-
+goog.require('upvote.admin.blockables.BlockableResource');
 goog.require('upvote.admin.events.EventQueryResource');
 goog.require('upvote.admin.events.EventResource');
 goog.require('upvote.admin.events.uvEventCard');
@@ -24,4 +24,5 @@ upvote.admin.events.module =
     angular.module('upvote.admin.events', ['ngResource'])
         .factory('eventResource', upvote.admin.events.EventResource)
         .factory('eventQueryResource', upvote.admin.events.EventQueryResource)
+        .factory('blockableResource', upvote.admin.blockables.BlockableResource)
         .directive('uvEventCard', upvote.admin.events.uvEventCard);

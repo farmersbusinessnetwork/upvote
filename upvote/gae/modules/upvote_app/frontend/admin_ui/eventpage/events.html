@@ -68,6 +68,7 @@
         <uv-listing-header flex-gt-md="15" flex="25">Name</uv-listing-header>
         <uv-listing-header flex-gt-md="15" flex="25">Recorded</uv-listing-header>
         <uv-listing-header flex-gt-md="15" flex="25">Type</uv-listing-header>
+        <uv-listing-header flex-gt-md="15" flex="25">State</uv-listing-header>
         <uv-listing-header flex-gt-md="15" flex="25">User</uv-listing-header>
         <uv-listing-header hide show-gt-md flex="15">Filename</uv-listing-header>
         <uv-listing-header hide show-gt-md flex="15">Publisher</uv-listing-header>
@@ -77,6 +78,7 @@
           <uv-listing-cell>{{item.fileName}}</uv-listing-cell>
           <uv-listing-cell>{{item.recordedDt | date:'medium'}}</uv-listing-cell>
           <uv-listing-cell>{{item.eventType}}</uv-listing-cell>
+          <uv-listing-cell>{{ item.blockable.state | toUiState: item.vote:item.cert | stateToDisplay }}</uv-listing-cell>
           <uv-listing-cell>{{item.executingUser}}</uv-listing-cell>
           <uv-listing-cell>{{item.publisher}}</uv-listing-cell>
           <md-tooltip layout="column">

@@ -26,6 +26,7 @@ upvote.admin.eventpage.EventController = class extends ModelController {
   /**
    * @param {!angular.Resource} eventResource
    * @param {!angular.Resource} eventQueryResource
+   * @param {!angular.Resource} blockableResource
    * @param {!angular.$routeParams} $routeParams
    * @param {!angular.Scope} $scope
    * @param {!angular.$location} $location
@@ -33,7 +34,7 @@ upvote.admin.eventpage.EventController = class extends ModelController {
    * @ngInject
    */
   constructor(
-      eventResource, eventQueryResource, $routeParams, $scope, $location,
+      eventResource, eventQueryResource, blockableResource, $routeParams, $scope, $location,
       page) {
     super(eventResource, eventQueryResource, $routeParams, $scope, $location);
 
@@ -45,10 +46,48 @@ upvote.admin.eventpage.EventController = class extends ModelController {
     // Add the hostId param to the request before loadData is called by init.
     this.requestData['hostId'] = this.hostId;
 
+    this.blockableResource = blockableResource;
+
     page.title = this.pageTitle;
 
     // Initialize the controller.
     this.init();
+  }
+
+    /** @override */
+  loadData(opt_more) {
+    let dataPromise = super.loadData(opt_more);
+    let blockableResource = this.blockableResource;
+
+    return (!dataPromise) ? dataPromise : dataPromise.then((results) => {
+      if(!results) {
+        return null;
+      }
+
+      results.forEach(function(item) {
+        if (!!item['blockableId']) {
+            blockableResource
+                .get({'id': item['blockableId']})['$promise']
+                .then((blockable) => {
+                    item.blockable = blockable;
+
+                    if (!!blockable['certId']) {
+                      blockableResource
+                          .get({'id': blockable['certId']})['$promise']
+                          .then((cert) => {
+                              item.cert = cert;
+                          })
+                          .catch((response) => {
+                              this.errorService_.createToastFromError(response);
+                          });
+                    }
+                })
+                .catch((response) => {
+                    this.errorService_.createToastFromError(response);
+                });
+        }
+      });
+    });
   }
 
   /**
