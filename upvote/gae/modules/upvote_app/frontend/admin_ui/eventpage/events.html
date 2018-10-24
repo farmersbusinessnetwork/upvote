@@ -72,6 +72,7 @@
         <uv-listing-header flex-gt-md="15" flex="25">User</uv-listing-header>
         <uv-listing-header hide show-gt-md flex="15">Filename</uv-listing-header>
         <uv-listing-header hide show-gt-md flex="15">Publisher</uv-listing-header>
+        <uv-listing-header hide show-gt-md flex="15">Count</uv-listing-header>
       </listing-header>
       <listing-body>
         <uv-listing-row on-select="eventCtrl.selectItem(item.key)" ng-repeat="item in eventCtrl.content">
@@ -83,6 +84,7 @@
           </uv-listing-cell>
           <uv-listing-cell>{{item.executingUser}}</uv-listing-cell>
           <uv-listing-cell>{{item.publisher}}</uv-listing-cell>
+          <uv-listing-cell>{{item.count}}</uv-listing-cell>
           <md-tooltip layout="column">
             Filename: {{item.fileName}},
             Recorded: {{item.recordedDt | date:'medium'}},
