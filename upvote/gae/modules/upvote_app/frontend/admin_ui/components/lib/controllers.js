@@ -209,10 +209,8 @@ upvote.admin.lib.controllers.ModelController = class {
    */
   search() {
     // If the search base is the id, just load the right card.
-    if (this.queryData['searchBase'] == 'id') {
-      if (this.queryData['search']) {
+    if (this.queryData['searchBase'] == 'id' && this.queryData['search']) {
         this.selectItem(this.queryData['search']);
-      }
     } else {
       this.loadData();
     }

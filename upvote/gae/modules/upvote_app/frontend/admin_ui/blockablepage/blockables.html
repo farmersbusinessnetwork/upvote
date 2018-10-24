@@ -97,7 +97,7 @@
     <!-- Blockable Type Selector -->
     <md-input-container>
       <md-select ng-model="blockableCtrl.requestData.type"
-                 ng-change="blockableCtrl.updateOptions()">
+                 ng-change="blockableCtrl.updateOptions(); blockableCtrl.search()">
         <md-option ng-repeat="type in blockableCtrl.types"
                    ng-value="type.value">
           {{type.displayName}}
