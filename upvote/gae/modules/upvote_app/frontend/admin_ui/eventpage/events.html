@@ -78,7 +78,9 @@
           <uv-listing-cell>{{item.fileName}}</uv-listing-cell>
           <uv-listing-cell>{{item.recordedDt | date:'medium'}}</uv-listing-cell>
           <uv-listing-cell>{{item.eventType}}</uv-listing-cell>
-          <uv-listing-cell>{{ item.blockable.state | toUiState: item.vote:item.cert | stateToDisplay }}</uv-listing-cell>
+          <uv-listing-cell>
+              <uv-state-chip state="item.blockable.state" vote="item.vote" cert="item.cert" is-pending="item.isPending"></uv-state-chip>
+          </uv-listing-cell>
           <uv-listing-cell>{{item.executingUser}}</uv-listing-cell>
           <uv-listing-cell>{{item.publisher}}</uv-listing-cell>
           <md-tooltip layout="column">
