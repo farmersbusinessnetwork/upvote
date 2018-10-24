@@ -70,7 +70,7 @@ upvote.admin.lib.controllers.ModelController = class {
       'type': this.types['all']['value'],
       'cursor': null,
       'asAdmin': true,
-      'perPage': 100,
+      'perPage': 50,
       'more': true
     };
     /** @export {!Array} */

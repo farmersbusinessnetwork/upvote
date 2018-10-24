@@ -2,7 +2,7 @@
   <uv-listing-cell>{{item.fileName}}{{item.commonName}}</uv-listing-cell>
   <uv-listing-cell>{{item.publisher}}{{item.organization}}</uv-listing-cell>
   <uv-listing-cell>{{item.productName}}</uv-listing-cell>
-  <uv-listing-cell>{{item.class_name}}</uv-listing-cell>
+  <uv-listing-cell>{{item.class_ | prettifyType}}</uv-listing-cell>
   <uv-listing-cell>
     <md-checkbox ng-disabled="true" ng-checked="item.flagged"></md-checkbox>
   </uv-listing-cell>
