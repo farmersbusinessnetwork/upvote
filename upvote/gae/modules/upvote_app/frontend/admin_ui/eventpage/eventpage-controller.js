@@ -14,6 +14,7 @@
 
 goog.provide('upvote.admin.eventpage.EventController');
 
+goog.require('goog.dom.safe');
 goog.require('upvote.admin.lib.controllers.ModelController');
 goog.require('upvote.shared.Page');
 
@@ -95,7 +96,8 @@ upvote.admin.eventpage.EventController = class extends ModelController {
    * @export
    */
   goToBlockable() {
-    this.location.path('/admin/blockables/' + this.card.blockableId).search({});
+    goog.dom.safe.openInWindow('/admin/blockables/' + this.card.blockableId);
+    //this.location.path('/admin/blockables/' + this.card.blockableId).search({});
   }
 
   /**
