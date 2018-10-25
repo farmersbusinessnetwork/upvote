@@ -32,6 +32,10 @@ upvote.admin.settingspage.Settings = class {
     this.santaEventBatchSize = 0;
     /** @export {number} */
     this.santaRuleBatchSize = 0;
+    /** @export {string} */
+    this.santaDirectoryWhitelistRegex = "";
+    /** @export {string} */
+    this.santaDirectoryBlacklistRegex = "";
     /** @export {boolean} */
     this.santaBundlesEnabled = true;
     /** @export {number} */

@@ -26,6 +26,8 @@
         </div>
       </form>
     </md-content>
+
+
     <h3 class="md-title">Santa</h3>
     <md-content layout-padding class="md-whiteframe-4dp">
       <div>
@@ -51,6 +53,28 @@
         </form>
       </div>
       <div>
+        <form name="ruleDirectoryWhitelistRegexSetting">
+          <md-input-container flex>
+            <md-tooltip>
+              Just like it says.
+            </md-tooltip>
+            <label>Directory Whitelist REGEX</label>
+            <input type="text" ng-model="settingsCtrl.settings.santaDirectoryWhitelistRegex" disabled>
+          </md-input-container>
+        </form>
+      </div>
+      <div>
+        <form name="ruleDirectoryBlacklistRegexSetting">
+          <md-input-container flex>
+            <md-tooltip>
+              Just like it says.
+            </md-tooltip>
+            <label>Directory Blacklist REGEX</label>
+            <input type="text" ng-model="settingsCtrl.settings.santaDirectoryBlacklistRegex" disabled>
+          </md-input-container>
+        </form>
+      </div>
+      <div>
         <form name="bundlesEnabledSetting">
           <md-switch ng-model="settingsCtrl.values.santaBundlesEnabled" disabled>
             Instruct clients to perform bundle scans
@@ -69,6 +93,8 @@
         </form>
       </div>
     </md-content>
+
+
     <h3 class="md-title">Voting Thresholds</h3>
     <md-content layout-padding class="md-whiteframe-4dp">
       <form name="votingThresholdsSetting">
@@ -101,6 +127,8 @@
         </div>
       </form>
     </md-content>
+
+
     <h3 class="md-title">Voting Weights</h3>
     <md-content layout-padding class="md-whiteframe-4dp">
       <form name="votingWeightsSetting">
@@ -151,6 +179,8 @@
         </div>
       </form>
     </md-content>
+
+
     <h3 class="md-title">Warnings and Alerts</h3>
     <md-content layout-padding class="md-whiteframe-4dp">
       <form name="siteAlertSetting">
@@ -181,6 +211,8 @@
         </div>
       </form>
     </md-content>
+
+
     <md-button id="save-button"
                ng-enabled="settingsCtrl.okToSave"
                class="md-fab md-raised md-primary"
