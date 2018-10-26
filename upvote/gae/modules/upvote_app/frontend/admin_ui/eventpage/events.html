@@ -65,12 +65,12 @@
   <md-content layout-padding class="md-whiteframe-4dp" ng-show="eventCtrl.content.length > 0">
     <uv-listing>
       <listing-header>
-        <uv-listing-header flex-gt-md="15" flex="25">Name</uv-listing-header>
+        <uv-listing-header flex-gt-md="15" flex="25">Filename</uv-listing-header>
         <uv-listing-header flex-gt-md="15" flex="25">Recorded</uv-listing-header>
         <uv-listing-header flex-gt-md="15" flex="25">Type</uv-listing-header>
         <uv-listing-header flex-gt-md="15" flex="25">State</uv-listing-header>
         <uv-listing-header flex-gt-md="15" flex="25">User</uv-listing-header>
-        <uv-listing-header hide show-gt-md flex="15">Filename</uv-listing-header>
+        <uv-listing-header hide show-gt-md flex="15">Filepath</uv-listing-header>
         <uv-listing-header hide show-gt-md flex="15">Publisher</uv-listing-header>
         <uv-listing-header hide show-gt-md flex="15">Count</uv-listing-header>
       </listing-header>
@@ -83,6 +83,7 @@
               <uv-state-chip state="item.blockable.state" vote="item.vote" cert="item.cert" is-pending="item.isPending"></uv-state-chip>
           </uv-listing-cell>
           <uv-listing-cell>{{item.event.executingUser}}</uv-listing-cell>
+          <uv-listing-cell>{{item.event.filePath}}</uv-listing-cell>
           <uv-listing-cell>{{item.event.publisher}}</uv-listing-cell>
           <uv-listing-cell>{{item.event.count}}</uv-listing-cell>
           <md-tooltip layout="column">
