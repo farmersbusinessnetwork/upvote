@@ -165,6 +165,14 @@ upvote.admin.hostpage.HostController = class extends ModelController {
     });
   }
 
+  toggleTransitiveWhitelisting(host) {
+    let previousState = host['transitiveWhitelistingEnabled'];
+    host['transitiveWhitelistingEnabled'] = !previousState;
+    this.resource['update'](host)['$promise'].catch(() => {
+      host['transitiveWhitelistingEnabled'] = previousState;
+    });
+  }
+
   userCanEditHosts() {
     return !!this.user && this.user['permissions'].includes('EDIT_HOSTS');
   }

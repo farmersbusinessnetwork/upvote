@@ -31,7 +31,7 @@
   <!-- Search Button -->
   <p>
     <md-button class="md-raised md-primary"
-               ng-click="hostCtrl.search()"\>
+               ng-click="hostCtrl.search()">
         Search
     </md-button>
   </p>
@@ -71,6 +71,34 @@
             Primary User:
             <span class="uv-host-card-value">
               {{ host.primaryUser }}
+            </span>
+          </span>
+          <span ng-if="hostCtrl.hostUtils.isSantaHost(host)"
+                class="md-subhead uv-host-card-detail">
+            Transitive Whitelisting Enabled:
+            <span class="uv-host-card-value">
+              {{ host.transitiveWhitelistingEnabled }}
+            </span>
+          </span>
+          <span ng-if="hostCtrl.hostUtils.isSantaHost(host)"
+                class="md-subhead uv-host-card-detail">
+            Whitelist REGEX:
+            <span class="uv-host-card-value">
+              {{ host.directoryWhitelistRegex }}
+            </span>
+          </span>
+          <span ng-if="hostCtrl.hostUtils.isSantaHost(host)"
+                class="md-subhead uv-host-card-detail">
+            Blacklist REGEX:
+            <span class="uv-host-card-value">
+              {{ host.directoryBlacklistRegex }}
+            </span>
+          </span>
+          <span ng-if="hostCtrl.hostUtils.isSantaHost(host)"
+                class="md-subhead uv-host-card-detail">
+            Should Upload Logs:
+            <span class="uv-host-card-value">
+              {{ host.shouldUploadLogs }}
             </span>
           </span>
           <span class="md-subhead uv-host-card-detail"
@@ -117,6 +145,7 @@
           </span>
         </md-card-title-text>
       </md-card-title>
+
       <md-card-actions layout="row" layout-align="left center"
                        class="layout-align-start-center layout-row">
         <button class="md-button md-default-theme md-ink-ripple"
@@ -124,6 +153,8 @@
                 type="button">
           <span class="ng-scope">Show Events</span>
         </button>
+
+        <!-- Toggle Lockdown/Monitor mode -->
         <button class="md-button md-default-theme md-ink-ripple"
                 type="button"
                 ng-if="hostCtrl.canEnableMonitorMode(host)"
@@ -136,6 +167,8 @@
                 ng-click="hostCtrl.enableLockdownMode(host)">
           <span class="ng-scope">Enable Lockdown Mode</span>
         </button>
+
+        <!-- Toggle Group Mode Change mode -->
         <button class="md-button md-default-theme md-ink-ripple"
                 type="button"
                 ng-if="hostCtrl.canToggleClientModeLock(host)"
@@ -143,6 +176,16 @@
           <span class="ng-scope" ng-if="!host.clientModeLock">Prevent Group Mode Change</span>
           <span class="ng-scope" ng-if="host.clientModeLock">Allow Group Mode Change</span>
         </button>
+
+        <!-- Toggle Transitive Whitelisting -->
+        <button class="md-button md-default-theme md-ink-ripple"
+                type="button"
+                ng-if="hostCtrl.canToggleClientModeLock(host)"
+                ng-click="hostCtrl.toggleTransitiveWhitelisting(host)">
+          <span class="ng-scope" ng-if="!host.transitiveWhitelistingEnabled">Enable Transitive Whitelisting</span>
+          <span class="ng-scope" ng-if="host.transitiveWhitelistingEnabled">Disable Transitive Whitelisting</span>
+        </button>
+
         <button class="md-button md-default-theme md-ink-ripple"
                 ng-click="hostCtrl.showDetails(host.id)"
                 type="button"

@@ -88,6 +88,9 @@ class HostHandler(base.BaseHandler):
     if self.request.get('shouldUploadLogs'):
       host.should_upload_logs = (
           self.request.get('shouldUploadLogs') == 'true')
+    if self.request.get('transitiveWhitelistingEnabled'):
+      host.transitive_whitelisting_enabled = (
+          self.request.get('transitiveWhitelistingEnabled') == 'true')
 
     host.put()
 
