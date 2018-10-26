@@ -23,6 +23,7 @@ from webapp2_extras import routes
 from google.appengine.ext import ndb
 
 from upvote.gae.bigquery import tables
+from upvote.gae.datastore import utils as datastore_utils
 from upvote.gae.datastore.models import base as base_models
 from upvote.gae.datastore.models import bit9 as bit9_models
 from upvote.gae.datastore.models import santa as santa_models
@@ -70,6 +71,41 @@ _MODEL_MAP = {
 }
 
 
+def _GetBlockableContext(blockables):
+  """Adds relevant entities corresponding to the listed Blockables.
+
+  The entities included (if present) are the Certificate associated with blockable
+
+  Args:
+    blockables: list of base.Blockables, The blockables for which context should be fetched.
+
+  Returns:
+    A list of dicts where each dict is of the form:
+        {'blockable': Blockable, 'cert': Certificate}
+    If the cert is not found, that dict entry is present but set to None.
+  """
+  # Fetch the Certificate associated with the Blockable.
+  cert_futures = []
+  for blockable in blockables:
+    if isinstance(blockable, base_models.Binary) and blockable.cert_id:
+      cert_future = ndb.Key(
+          santa_models.SantaCertificate, blockable.cert_id).get_async()
+    else:
+      cert_future = datastore_utils.GetNoOpFuture()
+    cert_futures.append(cert_future)
+
+  # Merge all Blockable context entities into their associated dicts.
+  events_with_context = []
+  for i, blockable in enumerate(blockables):
+    context_dict = {
+        'blockable': blockable,
+        'cert': cert_futures[i].get_result(),
+    }
+    events_with_context.append(context_dict)
+
+  return events_with_context
+
+
 class BlockableQueryHandler(base.BaseQueryHandler):
   """Handlers for querying blockables."""
 
@@ -106,8 +142,12 @@ class BlockableQueryHandler(base.BaseQueryHandler):
 
     BlockableQueryHandler.MODEL_CLASS = blockable_class
 
+    # Determine whether Event should be returned with context.
+    with_context = self.request.get('withContext').lower() == 'true'
+    context_callback = _GetBlockableContext if with_context else None
+
     # With target Model class set, trigger the query execution.
-    self._Query()
+    self._Query(context_callback)
 
   def _QueryModel(self, search_dict):
     if search_dict:
@@ -175,7 +215,10 @@ class BlockableHandler(base.BaseHandler):
     blockable = base_models.Blockable.get_by_id(blockable_id)
     if not blockable:
       self.abort(httplib.NOT_FOUND, explanation='Blockable not found')
-    self.respond_json(blockable)
+
+    with_context = (self.request.get('withContext').lower() == 'true')
+    response_data = _GetBlockableContext([blockable])[0] if with_context else blockable
+    self.respond_json(response_data)
 
   @xsrf_utils.RequireToken
   @base.RequireCapability(constants.PERMISSIONS.VIEW_OTHER_BLOCKABLES)
@@ -194,7 +237,10 @@ class BlockableHandler(base.BaseHandler):
         self.abort(httplib.INTERNAL_SERVER_ERROR, explanation=e.message)
       else:
         blockable = base_models.Blockable.get_by_id(blockable_id)
-        self.respond_json(blockable)
+
+        with_context = (self.request.get('withContext').lower() == 'true')
+        response_data = _GetBlockableContext([blockable])[0] if with_context else blockable
+        self.respond_json(response_data)
     elif self.request.get('reset').lower() == 'reset':
       self._reset_blockable(blockable_id)
     else:

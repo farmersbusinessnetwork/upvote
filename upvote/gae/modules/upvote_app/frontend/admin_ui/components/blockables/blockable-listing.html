@@ -1,27 +1,27 @@
 <uv-listing-row on-select="onSelected()">
-  <uv-listing-cell>{{item.fileName}}{{item.commonName}}</uv-listing-cell>
-  <uv-listing-cell>{{item.publisher}}{{item.organization}}</uv-listing-cell>
-  <uv-listing-cell>{{item.productName}}</uv-listing-cell>
-  <uv-listing-cell>{{item.class_ | prettifyType}}</uv-listing-cell>
+  <uv-listing-cell>{{item.blockable.fileName}}{{item.blockable.commonName}}</uv-listing-cell>
+  <uv-listing-cell>{{item.blockable.publisher}}{{item.blockable.organization}}</uv-listing-cell>
+  <uv-listing-cell>{{item.blockable.productName}}</uv-listing-cell>
+  <uv-listing-cell>{{item.blockable.class_ | prettifyType}}</uv-listing-cell>
   <uv-listing-cell>
-    <md-checkbox ng-disabled="true" ng-checked="item.flagged"></md-checkbox>
+    <md-checkbox ng-disabled="true" ng-checked="item.blockable.flagged"></md-checkbox>
   </uv-listing-cell>
-  <uv-listing-cell>{{ item.recordedDt | date:'medium' }}</uv-listing-cell>
-  <uv-listing-cell>{{item.score}}</uv-listing-cell>
+  <uv-listing-cell>{{ item.blockable.recordedDt | date:'medium' }}</uv-listing-cell>
+  <uv-listing-cell>{{item.blockable.score}}</uv-listing-cell>
   <uv-listing-cell ng-if="type != 'TRENDING_ALLOWED'">
-    <uv-state-chip state="item.state" vote="item.vote" cert="item.cert" is-pending="item.isPending"></uv-state-chip>
+    <uv-state-chip state="item.blockable.state" vote="item.vote" cert="item.cert" is-pending="item.isPending"></uv-state-chip>
   </uv-listing-cell>
-  <uv-listing-cell ng-if="type == 'TRENDING_ALLOWED'">{{item.count}}</uv-listing-cell>
+  <uv-listing-cell ng-if="type == 'TRENDING_ALLOWED'">{{item.blockable.count}}</uv-listing-cell>
   <md-tooltip>
-    {{item.idType}},
-    {{item.version}},
-    {{item.occurredDt| date:'mediumDate' }},
-    {{item.recordedDt| date:'mediumDate' }},
-    {{item.score}},
-    {{item.flagged}},
-    {{item.notes}},
-    {{item.stateChangeDt| date:'mediumDate' }},
-    {{item.bundleId}},
-    {{item.certId}}
+    {{item.blockable.idType}},
+    {{item.blockable.version}},
+    {{item.blockable.occurredDt| date:'mediumDate' }},
+    {{item.blockable.recordedDt| date:'mediumDate' }},
+    {{item.blockable.score}},
+    {{item.blockable.flagged}},
+    {{item.blockable.notes}},
+    {{item.blockable.stateChangeDt| date:'mediumDate' }},
+    {{item.blockable.bundleId}},
+    {{item.blockable.certId}}
   </md-tooltip>
 </uv-listing-row>

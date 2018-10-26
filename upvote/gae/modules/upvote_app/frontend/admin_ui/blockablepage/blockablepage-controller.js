@@ -80,31 +80,6 @@ upvote.admin.blockablepage.BlockableController = class extends ModelController {
     this.init();
   }
 
-  /** @override */
-  loadData(opt_more) {
-    let dataPromise = super.loadData(opt_more);
-    let resource = this.resource;
-
-    return (!dataPromise) ? dataPromise : dataPromise.then((results) => {
-      if(!results) {
-        return null;
-      }
-
-      results.forEach(function(item) {
-        if (!!item['certId']) {
-            resource
-                .get({'id': item['certId']})['$promise']
-                .then((cert) => {
-                    item.cert = cert;
-                })
-                .catch((response) => {
-                    this.errorService_.createToastFromError(response);
-                });
-        }
-      });
-    });
-  }
-
   /** @protected @override */
   init() {
     super.init();
@@ -114,6 +89,8 @@ upvote.admin.blockablepage.BlockableController = class extends ModelController {
     // Then, re-request search results to actually get results.
     this.platforms['all']['value'] = 'all';
     this.requestData['platform'] = this.platforms['all']['value'];
+    this.requestData['withContext'] = true;
+
     this.updateOptions();
     this.loadData();
 
