@@ -45,6 +45,7 @@ upvote.events.EventQueryResource =
           'cursor': '@cursor',
           'perPage': '@perPage',
           'asAdmin': '@asAdmin',
+          'withContext': '@withContext'
         }
       }
     });

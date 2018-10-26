@@ -75,26 +75,26 @@
         <uv-listing-header hide show-gt-md flex="15">Count</uv-listing-header>
       </listing-header>
       <listing-body>
-        <uv-listing-row on-select="eventCtrl.selectItem(item.key, true)" ng-repeat="item in eventCtrl.content">
-          <uv-listing-cell>{{item.fileName}}</uv-listing-cell>
-          <uv-listing-cell>{{item.recordedDt | date:'medium'}}</uv-listing-cell>
-          <uv-listing-cell>{{item.eventType}}</uv-listing-cell>
+        <uv-listing-row on-select="eventCtrl.selectItem(item.event.key, true)" ng-repeat="item in eventCtrl.content">
+          <uv-listing-cell>{{item.event.fileName}}</uv-listing-cell>
+          <uv-listing-cell>{{item.event.recordedDt | date:'medium'}}</uv-listing-cell>
+          <uv-listing-cell>{{item.event.eventType}}</uv-listing-cell>
           <uv-listing-cell>
               <uv-state-chip state="item.blockable.state" vote="item.vote" cert="item.cert" is-pending="item.isPending"></uv-state-chip>
           </uv-listing-cell>
-          <uv-listing-cell>{{item.executingUser}}</uv-listing-cell>
-          <uv-listing-cell>{{item.publisher}}</uv-listing-cell>
-          <uv-listing-cell>{{item.count}}</uv-listing-cell>
+          <uv-listing-cell>{{item.event.executingUser}}</uv-listing-cell>
+          <uv-listing-cell>{{item.event.publisher}}</uv-listing-cell>
+          <uv-listing-cell>{{item.event.count}}</uv-listing-cell>
           <md-tooltip layout="column">
-            Filename: {{item.fileName}},
-            Recorded: {{item.recordedDt | date:'medium'}},
-            {{item.recordedDt | timeSince}},
-            Type: {{item.eventType}},
-            Host ID: {{item.hostId | prettifyUuid}},
-            Path: {{item.filePath}},
-            Publisher: {{item.publisher}},
-            Version: {{item.version}},
-            Executing User: {{item.executingUser}}
+            Filename: {{item.event.fileName}},
+            Recorded: {{item.event.recordedDt | date:'medium'}},
+            {{item.event.recordedDt | timeSince}},
+            Type: {{item.event.eventType}},
+            Host ID: {{item.event.hostId | prettifyUuid}},
+            Path: {{item.event.filePath}},
+            Publisher: {{item.event.publisher}},
+            Version: {{item.event.version}},
+            Executing User: {{item.event.executingUser}}
           </md-tooltip>
       </listing-body>
     </uv-listing>
