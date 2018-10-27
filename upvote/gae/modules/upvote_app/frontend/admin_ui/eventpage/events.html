@@ -71,6 +71,7 @@
         <uv-listing-header flex-gt-md="15" flex="25">State</uv-listing-header>
         <uv-listing-header flex-gt-md="15" flex="25">User</uv-listing-header>
         <uv-listing-header hide show-gt-md flex="15">Filepath</uv-listing-header>
+        <uv-listing-header hide show-gt-md flex="15">Parent</uv-listing-header>
         <uv-listing-header hide show-gt-md flex="15">Publisher</uv-listing-header>
         <uv-listing-header hide show-gt-md flex="15">Count</uv-listing-header>
       </listing-header>
@@ -84,6 +85,7 @@
           </uv-listing-cell>
           <uv-listing-cell>{{item.event.executingUser}}</uv-listing-cell>
           <uv-listing-cell>{{item.event.filePath}}</uv-listing-cell>
+          <uv-listing-cell>{{item.event.parentName}}</uv-listing-cell>
           <uv-listing-cell>{{item.event.publisher}}</uv-listing-cell>
           <uv-listing-cell>{{item.event.count}}</uv-listing-cell>
           <md-tooltip layout="column">

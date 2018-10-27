@@ -64,6 +64,9 @@ class SantaEvent(mixin.Santa, base.Event):
   # DEPRECATED
   cert_sha256 = ndb.StringProperty()
 
+  # FBN
+  parent_name = ndb.StringProperty()
+
   @property
   def run_by_local_admin(self):
     return self.executing_user == constants.LOCAL_ADMIN.MACOS
@@ -76,6 +79,8 @@ class SantaEvent(mixin.Santa, base.Event):
     # Keep the newest non-null quarantine information
     if more_recent_event.quarantine:
       self.quarantine = more_recent_event.quarantine
+    if more_recent_event.parent_name:
+      self.parent_name = more_recent_event.parent_name
 
   def _DedupeEarlierEvent(self, earlier_event):
     """Updates if the related Event occurred earlier than the current one."""

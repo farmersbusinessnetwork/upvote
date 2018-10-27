@@ -460,6 +460,8 @@ class EventUploadHandler(BaseSantaApiHandler):
               santa_const.EVENT_UPLOAD.QUARANTINE_AGENT_BUNDLE_ID),
           downloaded_dt=quarantine_time)
 
+    dbevent.parent_name = event.get(santa_const.EVENT_UPLOAD.PARENT_NAME)
+
     usernames = event.get(santa_const.EVENT_UPLOAD.LOGGED_IN_USERS, [])
 
     tables.EXECUTION.InsertRow(
