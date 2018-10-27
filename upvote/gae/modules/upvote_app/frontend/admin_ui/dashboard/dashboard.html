@@ -13,7 +13,7 @@
         <listing-body>
           <uv-blockable-listing ng-repeat="item in dashboardCtrl.suspectBlockables"
                                  item="item"
-                                 on-selected="dashboardCtrl.onSelectedItem(item.id)">
+                                 on-selected="dashboardCtrl.onSelectedItem(item.blockable.id)">
           </uv-blockable-listing>
         </listing-body>
       </uv-listing>
@@ -33,7 +33,7 @@
         <listing-body>
           <uv-blockable-listing ng-repeat="item in dashboardCtrl.flaggedBlockables"
                                  item="item"
-                                 on-selected="dashboardCtrl.onSelectedItem(item.id)">
+                                 on-selected="dashboardCtrl.onSelectedItem(item.blockable.id)">
           </uv-blockable-listing>
         </listing-body>
       </uv-listing>

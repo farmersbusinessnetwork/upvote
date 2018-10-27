@@ -49,7 +49,7 @@ upvote.admin.dashboard.DashboardController = class {
   /** @private */
   init_() {
     this.blockableQueryResource_['search'](
-            {'filter': 'suspect', 'platform': 'all', 'type': 'all'})['$promise']
+            {'filter': 'suspect', 'platform': 'all', 'type': 'all', 'withContext': 'true'})['$promise']
         .then((response) => {
           this.suspectBlockables = response['content'];
         })
@@ -57,7 +57,7 @@ upvote.admin.dashboard.DashboardController = class {
           this.errorService_.createToastFromError(response);
         });
     this.blockableQueryResource_['search'](
-            {'filter': 'flagged', 'platform': 'all', 'type': 'all'})['$promise']
+            {'filter': 'flagged', 'platform': 'all', 'type': 'all', 'withContext': 'true'})['$promise']
         .then((response) => {
           this.flaggedBlockables = response['content'];
         })

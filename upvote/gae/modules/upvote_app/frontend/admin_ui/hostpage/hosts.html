@@ -75,30 +75,32 @@
           </span>
           <span ng-if="hostCtrl.hostUtils.isSantaHost(host)"
                 class="md-subhead uv-host-card-detail">
+            Should Upload Logs:
+            <span class="uv-host-card-value">
+              {{ host.shouldUploadLogs }}
+            </span>
+          </span>
+
+          <!-- Details -->
+          <span ng-if="hostCtrl.hostUtils.isSantaHost(host) && hostCtrl.detailsVisible(host.id)"
+                class="md-subhead uv-host-card-detail">
             Transitive Whitelisting Enabled:
             <span class="uv-host-card-value">
               {{ host.transitiveWhitelistingEnabled }}
             </span>
           </span>
-          <span ng-if="hostCtrl.hostUtils.isSantaHost(host)"
+          <span ng-if="hostCtrl.hostUtils.isSantaHost(host) && hostCtrl.detailsVisible(host.id)"
                 class="md-subhead uv-host-card-detail">
             Whitelist REGEX:
             <span class="uv-host-card-value">
               {{ host.directoryWhitelistRegex }}
             </span>
           </span>
-          <span ng-if="hostCtrl.hostUtils.isSantaHost(host)"
+          <span ng-if="hostCtrl.hostUtils.isSantaHost(host) && hostCtrl.detailsVisible(host.id)"
                 class="md-subhead uv-host-card-detail">
             Blacklist REGEX:
             <span class="uv-host-card-value">
               {{ host.directoryBlacklistRegex }}
-            </span>
-          </span>
-          <span ng-if="hostCtrl.hostUtils.isSantaHost(host)"
-                class="md-subhead uv-host-card-detail">
-            Should Upload Logs:
-            <span class="uv-host-card-value">
-              {{ host.shouldUploadLogs }}
             </span>
           </span>
           <span class="md-subhead uv-host-card-detail"
