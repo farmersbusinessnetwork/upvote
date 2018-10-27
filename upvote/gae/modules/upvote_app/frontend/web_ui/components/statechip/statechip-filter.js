@@ -31,9 +31,12 @@ const UiState = upvote.shared.constants.UiBlockableState;
  * @param {upvote.shared.constants.BlockableState} blockableState
  * @param {?upvote.shared.models.Vote} vote
  * @param {?upvote.shared.models.SantaCertificate} cert
+ * @param {?upvote.shared.models.SantaEvent} event
+ * @param {?upvote.shared.models.SantaHost} host
+ * @param {upvote.admin.eventpage.Settings} settings
  * @return {?upvote.shared.constants.UiBlockableState}
  */
-upvote.statechip.ToUiState = function(blockableState, vote, cert) {
+upvote.statechip.ToUiState = function(blockableState, vote, cert, event, host, settings) {
   // If the binary has blockable-specific rules associated with it, display the
   // binary's state at the highest priority.
   switch (blockableState) {
@@ -61,6 +64,32 @@ upvote.statechip.ToUiState = function(blockableState, vote, cert) {
         return UiState['CERT_BANNED'];
     }
   }
+
+  // If there's no certificate, or no certificate rules, see if there are any
+  // host or global regex rules
+  // TODO: can we just use javascript match?
+  if(!!event && !!event['filePath']) {  // only have a path if we have an event
+    // if this matches the host's blacklist
+    if(!!host && !!host['directoryBlacklistRegex'] && event['filePath'].match(host['directoryBlacklistRegex'])) {
+      return UiState['REGEX_BANNED'];
+    }
+
+    // if this matches the global blacklist
+    if(!!settings && !!settings['santaDirectoryBlacklistRegex'] && event['filePath'].match(settings['santaDirectoryBlacklistRegex'])) {
+      return UiState['REGEX_BANNED'];
+    }
+
+    // if there are no blacklists, check to see if there are any whitelists
+    if(!!host && !!host['directoryWhitelistRegex'] && event['filePath'].match(host['directoryWhitelistRegex'])) {
+      return UiState['REGEX_WHITELISTED'];
+    }
+
+    // if this matches the global blacklist
+    if(!!settings && !!settings['santaDirectoryWhitelistRegex'] && event['filePath'].match(settings['santaDirectoryWhitelistRegex'])) {
+      return UiState['REGEX_WHITELISTED'];
+    }
+  }
+
   // If the binary has neither blockable-specific nor cert-specific rules,
   // display the binary's state.
   switch (blockableState) {

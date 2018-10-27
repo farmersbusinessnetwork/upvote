@@ -22,11 +22,22 @@ goog.scope(() => {
 const ModelController = upvote.admin.lib.controllers.ModelController;
 
 
+upvote.admin.eventpage.Settings = class {
+  constructor() {
+    /** @export {string} */
+    this.santaDirectoryWhitelistRegex = "";
+    /** @export {string} */
+    this.santaDirectoryBlacklistRegex = "";
+  }
+};
+
+
 /** Event model controller. */
 upvote.admin.eventpage.EventController = class extends ModelController {
   /**
    * @param {!angular.Resource} eventResource
    * @param {!angular.Resource} eventQueryResource
+   * @param {!upvote.admin.settings.SettingsService} settingsService
    * @param {!angular.$routeParams} $routeParams
    * @param {!angular.Scope} $scope
    * @param {!angular.$location} $location
@@ -34,9 +45,12 @@ upvote.admin.eventpage.EventController = class extends ModelController {
    * @ngInject
    */
   constructor(
-      eventResource, eventQueryResource, $routeParams, $scope, $location,
+      eventResource, eventQueryResource, settingsService, $routeParams, $scope, $location,
       page) {
     super(eventResource, eventQueryResource, $routeParams, $scope, $location);
+
+    /** @private {!upvote.admin.settings.SettingsService} */
+    this.settingsService_ = settingsService;
 
     /** @export {string} */
     this.hostId = this.location.search()['hostId'];
@@ -47,7 +61,17 @@ upvote.admin.eventpage.EventController = class extends ModelController {
     this.requestData['hostId'] = this.hostId;
     this.requestData['withContext'] = true;
 
+    /** @export {!upvote.admin.eventpage.Settings} */
+    this.settings = new upvote.admin.eventpage.Settings();
+
     page.title = this.pageTitle;
+
+    // Get the settings we need (FBN TODO: use settings controller directly?)
+    for (let settingName of Object.keys(this.settings)) {
+      this.settingsService_.get(settingName).then((result) => {
+        this.settings[settingName] = result['data'];
+      });
+    }
 
     // Initialize the controller.
     this.init();
@@ -58,8 +82,9 @@ upvote.admin.eventpage.EventController = class extends ModelController {
    * @export
    */
   goToBlockable() {
-    goog.dom.safe.openInWindow('/admin/blockables/' + this.card.blockableId);
+    // FBN
     //this.location.path('/admin/blockables/' + this.card.blockableId).search({});
+    goog.dom.safe.openInWindow('/admin/blockables/' + this.card.blockableId);
   }
 
   /**

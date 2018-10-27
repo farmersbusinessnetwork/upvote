@@ -52,7 +52,7 @@ SANTA_DEFAULT_CLIENT_MODE = constants.SANTA_CLIENT_MODE.MONITOR
 # from which executions will be allowed.
 # NOTE: This regex must be written in ICU format. Docs can be found here:
 # https://developer.apple.com/documentation/foundation/nsregularexpression
-SANTA_DIRECTORY_WHITELIST_REGEX = "^/usr/local/Homebrew/.*"
+SANTA_DIRECTORY_WHITELIST_REGEX = "^/usr/local/Homebrew/.*|^/usr/local/Cellar/.*"
 # If provided, a regex string that matches execution paths (read: not files)
 # from which executions will be blocked.
 # NOTE: This regex must be written in ICU format. Docs can be found here:

@@ -23,7 +23,7 @@ goog.require('upvote.app.constants');
 upvote.statechip.StateChip = () => {
   return {
     'restrict': 'E',
-    'scope': {'state': '=', 'vote': '=', 'cert': '=', 'isPending': '='},
+    'scope': {'state': '=', 'vote': '=', 'cert': '=', 'event': '=', 'host': '=', 'settings': '=', 'isPending': '='},
     'templateUrl': upvote.app.constants.STATIC_URL_PREFIX +
         'components/statechip/statechip.html',
   };

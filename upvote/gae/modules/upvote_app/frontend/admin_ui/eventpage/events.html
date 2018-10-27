@@ -81,7 +81,7 @@
           <uv-listing-cell>{{item.event.recordedDt | date:'medium'}}</uv-listing-cell>
           <uv-listing-cell>{{item.event.eventType}}</uv-listing-cell>
           <uv-listing-cell>
-              <uv-state-chip state="item.blockable.state" vote="item.vote" cert="item.cert" is-pending="item.isPending"></uv-state-chip>
+              <uv-state-chip state="item.blockable.state" vote="item.vote" cert="item.cert" event="item.event" host="item.host" settings="eventCtrl.settings" is-pending="item.isPending"></uv-state-chip>
           </uv-listing-cell>
           <uv-listing-cell>{{item.event.executingUser}}</uv-listing-cell>
           <uv-listing-cell>{{item.event.filePath}}</uv-listing-cell>

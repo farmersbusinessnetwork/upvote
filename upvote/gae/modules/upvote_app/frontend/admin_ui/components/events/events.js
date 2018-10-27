@@ -16,6 +16,7 @@ goog.provide('upvote.admin.events.module');
 goog.require('upvote.admin.events.EventQueryResource');
 goog.require('upvote.admin.events.EventResource');
 goog.require('upvote.admin.events.uvEventCard');
+goog.require('upvote.admin.settings.SettingsService');
 
 
 /** @type {!angular.Module} */
@@ -23,4 +24,5 @@ upvote.admin.events.module =
     angular.module('upvote.admin.events', ['ngResource'])
         .factory('eventResource', upvote.admin.events.EventResource)
         .factory('eventQueryResource', upvote.admin.events.EventQueryResource)
+        .service('settingsService', upvote.admin.settings.SettingsService)
         .directive('uvEventCard', upvote.admin.events.uvEventCard);

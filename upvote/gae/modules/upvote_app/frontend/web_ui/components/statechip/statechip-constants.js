@@ -37,6 +37,8 @@ StateDisplayMap[UiState['FLAGGED']] = 'Flagged';
 StateDisplayMap[UiState['BANNED']] = 'Banned';
 StateDisplayMap[UiState['CERT_BANNED']] = 'Banned Publisher';
 StateDisplayMap[UiState['CERT_WHITELISTED']] = 'Whitelisted Publisher';
+StateDisplayMap[UiState['REGEX_BANNED']] = 'Banned File Path';
+StateDisplayMap[UiState['REGEX_WHITELISTED']] = 'Whitelisted File Path';
 
 
 /**
@@ -53,4 +55,6 @@ StateClassMap[UiState['FLAGGED']] = 'flagged';
 StateClassMap[UiState['BANNED']] = 'banned';
 StateClassMap[UiState['CERT_BANNED']] = 'banned';
 StateClassMap[UiState['CERT_WHITELISTED']] = 'whitelisted';
+StateClassMap[UiState['REGEX_BANNED']] = 'banned';
+StateClassMap[UiState['REGEX_WHITELISTED']] = 'whitelisted';
 });  // goog.scope
