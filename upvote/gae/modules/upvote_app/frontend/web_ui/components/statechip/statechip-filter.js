@@ -39,6 +39,7 @@ const UiState = upvote.shared.constants.UiBlockableState;
 upvote.statechip.ToUiState = function(blockableState, vote, cert, event, host, settings) {
   // If the binary has blockable-specific rules associated with it, display the
   // binary's state at the highest priority.
+  // NOTE: bundle rules have no effect per https://github.com/google/santa/issues/314
   switch (blockableState) {
     case BlockableState['APPROVED_FOR_LOCAL_WHITELISTING']:
       if (!!vote && vote['wasYesVote']) {
