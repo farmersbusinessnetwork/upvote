@@ -72,6 +72,7 @@ upvote.admin.app.module = angular.module('upvote.admin.app', [
   'ngResource',
   'ngMaterial',
   'ngSanitize',
+  'ngMessages',
 ]);
 
 /**

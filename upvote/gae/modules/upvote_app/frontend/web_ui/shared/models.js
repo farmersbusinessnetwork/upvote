@@ -230,6 +230,7 @@ upvote.shared.models.QuarantineMetadata;
  *
  *   id: string,
  *   blockableId: string,
+ *   bundleId: string,
  *   eventType: string,
  *   recordedDt: string,
  *   hostId: string,

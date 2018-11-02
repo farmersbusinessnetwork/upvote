@@ -88,6 +88,14 @@ upvote.admin.eventpage.EventController = class extends ModelController {
   }
 
   /**
+   * Navigate to the Blockable page associated with the selected Event.
+   * @export
+   */
+  goToBundle() {
+    goog.dom.safe.openInWindow('/admin/blockables/' + this.card.bundleId);
+  }
+
+  /**
    * Navigate to the Host page associated with the selected Event.
    * @export
    */

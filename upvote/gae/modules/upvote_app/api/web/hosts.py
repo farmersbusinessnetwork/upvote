@@ -92,6 +92,12 @@ class HostHandler(base.BaseHandler):
       host.transitive_whitelisting_enabled = (
           self.request.get('transitiveWhitelistingEnabled') == 'true')
 
+    if isinstance(host, santa_models.SantaHost):
+      if self.request.get('directoryWhitelistRegex'):
+        host.directory_whitelist_regex = self.request.get('directoryWhitelistRegex')
+      if self.request.get('directoryBlacklistRegex'):
+        host.directory_blacklist_regex = self.request.get('directoryBlacklistRegex')
+
     host.put()
 
     self.respond_json(host)

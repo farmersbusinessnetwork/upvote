@@ -91,6 +91,11 @@ class SantaEvent(mixin.Santa, base.Event):
     if not self.quarantine and earlier_event.quarantine:
       self.quarantine = earlier_event.quarantine
 
+  def to_dict(self, include=None, exclude=None):  # pylint: disable=g-bad-name
+    result = super(SantaEvent, self).to_dict(include=include, exclude=exclude)
+    result['bundle_id'] = self.bundle_key.id() if self.bundle_key else None
+    return result
+
 
 class SantaBlockable(mixin.Santa, base.Binary):
   """An binary that has been blocked by Santa.

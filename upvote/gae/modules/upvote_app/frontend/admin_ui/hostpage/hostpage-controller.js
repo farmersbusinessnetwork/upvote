@@ -34,6 +34,7 @@ upvote.admin.hostpage.HostController = class extends ModelController {
    * @param {!upvote.hosts.HostUtilsService} hostUtilsService
    * @param {!upvote.errornotifier.ErrorService} errorService
    * @param {!angular.$routeParams} $routeParams
+   * @param {!md.$dialog} $mdDialog
    * @param {!angular.Scope} $scope
    * @param {!angular.Scope} $rootScope
    * @param {!angular.$location} $location
@@ -42,7 +43,7 @@ upvote.admin.hostpage.HostController = class extends ModelController {
    */
   constructor(
       hostResource, hostQueryResource, userResource, hostService,
-      hostUtilsService, errorService, $routeParams, $scope, $rootScope,
+      hostUtilsService, errorService, $routeParams, $mdDialog, $scope, $rootScope,
       $location, page) {
     super(hostResource, hostQueryResource, $routeParams, $scope, $location);
 
@@ -60,6 +61,8 @@ upvote.admin.hostpage.HostController = class extends ModelController {
     this.rootScope = $rootScope;
     /** @export {?upvote.shared.models.User} */
     this.user = null;
+    /** @private {!md.$dialog} */
+    this.mdDialog_ = $mdDialog;
 
     // A list of hostnames that have visible host details
     /** @private {!Set<string>} */
@@ -111,6 +114,60 @@ upvote.admin.hostpage.HostController = class extends ModelController {
   goToBlockablesPage(hostId) {
     let requestPath = '/hosts/' + hostId + '/blockables';
     this.location_.path(requestPath);
+  }
+
+  /**
+   * Opens Prompt to change host's whitelist REGEX
+   * @param {!Object} host
+   * @param {!object} event
+   * @export
+   */
+  changeWhitelistREGEX(host, event) {
+    let previousWhitelistREGEX = host['directoryWhitelistRegex'];
+    let resource = this.resource;
+
+    // .required(true)  doesn't seem to be supported
+    let confirm = this.mdDialog_.prompt()
+        .title('Whitelist REGEX')
+        .textContent('Enter updated whitelist REGEX')
+        .initialValue(previousWhitelistREGEX)
+        .targetEvent(event)
+        .ok('Update')
+        .cancel('Cancel');
+
+    this.mdDialog_.show(confirm).then(function(result) {
+      host['directoryWhitelistRegex'] = result;
+      resource.update(host)['$promise'].catch(() => {
+        host['directoryWhitelistRegex'] = previousWhitelistREGEX;
+      });
+    }, function() { /* nop */});
+  }
+
+  /**
+   * Opens Prompt to change host's blacklist REGEX
+   * @param {!Object} host
+   * @param {!object} event
+   * @export
+   */
+  changeBlacklistREGEX(host, event) {
+    let previousBlacklistREGEX = host['directoryBlacklistRegex'];
+    let resource = this.resource;
+
+    // .required(true)  doesn't seem to be supported
+    let confirm = this.mdDialog_.prompt()
+        .title('Blacklist REGEX')
+        .textContent('Enter updated blacklist REGEX')
+        .initialValue(previousBlacklistREGEX)
+        .targetEvent(event)
+        .ok('Update')
+        .cancel('Cancel');
+
+    this.mdDialog_.show(confirm).then(function(result) {
+      host['directoryBlacklistRegex'] = result;
+      resource.update(host)['$promise'].catch(() => {
+        host['directoryBlacklistRegex'] = previousBlacklistREGEX;
+      });
+    }, function() { /* nop */});
   }
 
   /**

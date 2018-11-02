@@ -55,8 +55,9 @@ def _GetEventContext(events):
       ndb.Key(base_models.Host, event.host_id) for event in events)
 
   # Fetch the entities associated with Event.blockable_key.
-  blockable_futures = ndb.get_multi_async(
-      event.blockable_key for event in events)
+  blockable_futures = [
+    event.blockable_key.get_async() for event in events]
+
   vote_futures = ndb.get_multi_async(
       vote_models.Vote.GetKey(event.blockable_key, event.user_key)
       for event in events)
@@ -87,25 +88,34 @@ def _GetEventContext(events):
 
   # Merge all Event context entities into their associated dicts.
   events_with_context = []
+  bundle_cert_futures = []
+
   for i, event in enumerate(events):
     context_dict = {
         'event': event,
         'host': host_futures[i].get_result(),
+        'blockable': blockable_futures[i].get_result(),
+        'cert': cert_futures[i].get_result(),
+        'vote': vote_futures[i].get_result(),
     }
+
     bundle = bundle_futures[i].get_result()
-    if bundle is None:
-      context_dict.update({
-          'blockable': blockable_futures[i].get_result(),
-          'cert': cert_futures[i].get_result(),
-          'vote': vote_futures[i].get_result(),
-      })
+    if bundle is None or bundle.main_cert_key is None:
+      bundle_cert_futures.append(datastore_utils.GetNoOpFuture())
     else:
+      bundle_cert_futures.append(bundle.main_cert_key.get_async())
+
       context_dict.update({
-          'blockable': bundle,
-          'cert': bundle.main_cert_key,
-          'vote': bundle_vote_futures[i].get_result(),
+          'bundle': bundle,
+          'bundle_cert': bundle.main_cert_key,
+          'bundle_vote': bundle_vote_futures[i].get_result(),
       })
     events_with_context.append(context_dict)
+
+  for i, bundle_cert_future in enumerate(bundle_cert_futures):
+    bundle_cert = bundle_cert_future.get_result()
+    if bundle_cert is not None:
+      events_with_context[i]['bundle_cert'] = bundle_cert
 
   return events_with_context
 
@@ -182,6 +192,9 @@ class EventHandler(base.BaseHandler):
         response_data = _GetEventContext([event])[0] if with_context else event
         if event.executing_user != self.user.nickname:
           self.RequireCapability(constants.PERMISSIONS.VIEW_OTHER_EVENTS)
+
+        with_context = (self.request.get('withContext').lower() == 'true')
+        response_data = _GetEventContext([event])[0] if with_context else event
         self.respond_json(response_data)
       else:
         self.abort(httplib.NOT_FOUND, explanation='Event not found')

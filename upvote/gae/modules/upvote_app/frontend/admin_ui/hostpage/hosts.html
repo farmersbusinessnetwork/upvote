@@ -206,6 +206,14 @@
                 ng-disabled="host.shouldUploadLogs">
           <span class="ng-scope">Request Logs</span>
         </button>
+
+          <!-- Change White/Black list button -->
+        <md-button class="md-primary md-raised" ng-click="hostCtrl.changeWhitelistREGEX(host, $event)">
+          Change Whitelist REGEX
+        </md-button>
+        <md-button class="md-primary md-raised" ng-click="hostCtrl.changeBlacklistREGEX(host, $event)">
+          Change Blacklist REGEX
+        </md-button>
       </md-card-actions>
     </md-card>
 
