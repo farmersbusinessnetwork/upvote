@@ -89,6 +89,7 @@ py_appengine_binary(
     deps = [
         ":santa_api_library",
     ],
+    overwrite_appengine_config = False,
 )
 
 # AppEngine Unit Tests

@@ -32,4 +32,5 @@ py_appengine_binary(
     deps = [
         ":upvote_app_library",
     ],
+    overwrite_appengine_config = False,
 )

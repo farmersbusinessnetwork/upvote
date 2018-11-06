@@ -60,10 +60,10 @@ SANTA_DIRECTORY_WHITELIST_REGEX = "^/usr/local/Homebrew/.*|^/usr/local/Cellar/.*
 SANTA_DIRECTORY_BLACKLIST_REGEX = None
 # The maximum number of events that a Santa client will attempt to upload in a
 # single request.
-SANTA_EVENT_BATCH_SIZE = 100
+SANTA_EVENT_BATCH_SIZE = 25
 # The maximum number of rules that Upvote will attempt to send to clients in a
 # single request.
-SANTA_RULE_BATCH_SIZE = 250
+SANTA_RULE_BATCH_SIZE = 50
 # Whether Upvote will require connecting clients to provide an XSRF token.
 SANTA_REQUIRE_XSRF = True
 # Whether Santa clients will upload bundles.

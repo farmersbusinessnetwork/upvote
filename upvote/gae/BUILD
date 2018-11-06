@@ -25,6 +25,7 @@ py_appengine_binary(
         "//upvote/gae/modules/upvote_app:upvote_app_library",
         "//upvote/gae/shared:all",
     ],
+    overwrite_appengine_config = False,
 )
 
 # MPMs

@@ -1,12 +1,30 @@
 git_repository(
     name = "io_bazel_rules_appengine",
-    commit = "d8136f0d4e71e8c70cbd3514eaeed9d41a67a85f",
     remote = "https://github.com/bazelbuild/rules_appengine.git",
+    # Check https://github.com/bazelbuild/rules_appengine/releases for the latest version.
+    #tag = "0.0.8",
+    # We need this fix: https://github.com/bazelbuild/rules_appengine/commit/8122a7086c101d57f940ffe7075e635d7f787b70#diff-6c4ba9456a113bcff5caecf8bffd5833R26
+    commit = "ee5eec25f22782e03c5abda88f2c946e88d776f3",
 )
 
-load("@io_bazel_rules_appengine//appengine:py_appengine.bzl", "py_appengine_repositories")
+load(
+    "@io_bazel_rules_appengine//appengine:sdk.bzl",
+    "appengine_repositories",
+)
 
-py_appengine_repositories()
+appengine_repositories()
+
+
+load(
+    "@io_bazel_rules_appengine//appengine:py_appengine.bzl",
+    "py_appengine_repositories",
+)
+
+# Available from: https://storage.googleapis.com/appengine-sdks/featured/google_appengine_{version}.zip
+py_appengine_repositories(
+    version = '1.9.78',
+    sha256 = 'fc37637530705260102d6acb03f5086290093394a07c51706c37da5254ce215b',
+)
 
 # needed for mock, webtest
 new_http_archive(
