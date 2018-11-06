@@ -75,7 +75,8 @@ py_appengine_library(
     deps = [
         "//upvote/shared:constants",
         "//upvote/gae/datastore/models:datadog",
-        "//external:datadog"
+        "//external:datadog",
+        "//external:gcloud_monitoring",
     ],
 )
 

@@ -271,11 +271,11 @@ bind(
 new_http_archive(
     name = "gapi_protos_http",
     build_file = "//third_party:gapi_protos.BUILD",
-    sha256 = "f94cc66efba677a086b8b17b1240239433495b77631cd410f70151a8ff14435d",
-    strip_prefix = "googleapis-common-protos-1.5.2",
+    sha256 = "c075eddaa2628ab519e01b7d75b76e66c40eaa50fc52758d8225f84708950ef2",
+    strip_prefix = "googleapis-common-protos-1.5.3",
     urls = [
-        "http://mirror.bazel.build/pypi.python.org/packages/96/6a/34759a4a2119a8aae0b19d045917ee4a39ffaaeda2df3a892730fdcda408/googleapis-common-protos-1.5.2.tar.gz",
-        "https://pypi.python.org/packages/96/6a/34759a4a2119a8aae0b19d045917ee4a39ffaaeda2df3a892730fdcda408/googleapis-common-protos-1.5.2.tar.gz",
+        "http://mirror.bazel.build/pypi.python.org/packages/00/03/d25bed04ec8d930bcfa488ba81a2ecbf7eb36ae3ffd7e8f5be0d036a89c9/googleapis-common-protos-1.5.3.tar.gz",
+        "https://files.pythonhosted.org/packages/00/03/d25bed04ec8d930bcfa488ba81a2ecbf7eb36ae3ffd7e8f5be0d036a89c9/googleapis-common-protos-1.5.3.tar.gz",
     ],
 )
 
@@ -284,15 +284,15 @@ bind(
     actual = "@gapi_protos_http//:gapi_protos",
 )
 
-# needed for gcloud_core
+# needed for google-api-core for  gcloud_core
 new_http_archive(
     name = "protobuf_archive",
     build_file = "//third_party:protobuf.BUILD",
-    sha256 = "1cbcee2c45773f57cb6de7ee0eceb97f92b9b69c0178305509b162c0160c1f04",
-    strip_prefix = "protobuf-3.3.0",
+    sha256 = "1489b376b0f364bcc6f89519718c057eb191d7ad6f1b395ffd93d1aa45587811",
+    strip_prefix = "protobuf-3.6.1",
     urls = [
-        "http://mirror.bazel.build/pypi.python.org/packages/56/28/6263d846f60dad93939fd3a22d712d6bae3bf3484332d22bd5933dec8c99/protobuf-3.3.0.tar.gz",
-        "https://pypi.python.org/packages/56/28/6263d846f60dad93939fd3a22d712d6bae3bf3484332d22bd5933dec8c99/protobuf-3.3.0.tar.gz",
+        "http://mirror.bazel.build/pypi.python.org/packages/1b/90/f531329e628ff34aee79b0b9523196eb7b5b6b398f112bb0c03b24ab1973/protobuf-3.6.1.tar.gz",
+        "https://files.pythonhosted.org/packages/1b/90/f531329e628ff34aee79b0b9523196eb7b5b6b398f112bb0c03b24ab1973/protobuf-3.6.1.tar.gz",
     ],
 )
 
@@ -350,10 +350,10 @@ bind(
 new_http_archive(
     name = "gcloud_api_core_archive",
     build_file = "//third_party:gcloud_api_core.BUILD",
-    sha256 = "370d5dc108ac5dfea2eee8ef32b77693444bf957d4657820d12596ca5082e8ae",
-    strip_prefix = "google-api-core-1.2.0",
+    sha256 = "a9ae625afd0ea5a4618604675d1fc140998c9c2b17f1d91817a7a7f5b33f7484",
+    strip_prefix = "google-api-core-1.4.1",
     urls = [
-        "https://files.pythonhosted.org/packages/d2/8d/b715c15184f1b96f92d331d806ed730ed1ca0c1e6e6db9cc26f9a1f2d927/google-api-core-1.2.0.tar.gz",
+        "https://files.pythonhosted.org/packages/19/f3/fb05744f23986202714f7198472ce1f18dc8df12113cfdde777ca1172ba3/google-api-core-1.4.1.tar.gz",
     ],
 )
 
@@ -448,6 +448,7 @@ bind(
     actual = "@gcloud_auth_git//:gcloud_auth",
 )
 
+# google-cloud-bigquery
 new_http_archive(
     name = "gcloud_bigquery_archive",
     build_file = "//third_party:gcloud_bigquery.BUILD",
@@ -463,6 +464,25 @@ bind(
     name = "gcloud_bigquery",
     actual = "@gcloud_bigquery_archive//:gcloud_bigquery",
 )
+
+# google-cloud-monitoring
+# unfortunately the latest monitoring relies on grpcio, which is really complicated to support via bazel: https://github.com/grpc/grpc/commit/e1210f78f82b2c9e4ae9f59463322209d45d5354
+new_http_archive(
+    name = "gcloud_monitoring_archive",
+    build_file = "//third_party:gcloud_monitoring.BUILD",
+    sha256 = "534d66d97611c9c6e08823532f5144f6786d3a6103a6d5ed6411ac465faa5341",
+    strip_prefix = "google-cloud-monitoring-0.28.1",
+    urls = [
+        "https://mirror.bazel.build/files.pythonhosted.org/packages/bb/9b/cb40fe7bfbb57ba4f031c93d5353e58c0f2cc0060e00c4871a90360ae2d4/google-cloud-monitoring-0.28.1.tar.gz",
+        "https://files.pythonhosted.org/packages/bb/9b/cb40fe7bfbb57ba4f031c93d5353e58c0f2cc0060e00c4871a90360ae2d4/google-cloud-monitoring-0.28.1.tar.gz",
+    ],
+)
+
+bind(
+    name = "gcloud_monitoring",
+    actual = "@gcloud_monitoring_archive//:gcloud_monitoring",
+)
+
 
 new_http_archive(
     name = "requests_toolbelt_archive",
