@@ -30,7 +30,6 @@ def _dd_get_stats():
   global _dd_stats
 
   dd_api_instance = datadog_model.DataDogApiAuth.GetInstance()
-  dd_api_key = dd_api_instance.api_key if dd_api_instance is not None else None
 
   if not _dd_stats:
     if not dd_api_instance:
@@ -38,9 +37,12 @@ def _dd_get_stats():
 
     datadog.initialize(dd_api_instance.api_key)
 
+    # we can't have background threads
     _dd_stats = datadog.ThreadStats()
-    _dd_stats.start()
+    _dd_stats.start(flush_in_thread=False)
 
+    # this requires an agent
+    # _dd_stats = datadog.statsd
   return _dd_stats
 
 
@@ -81,6 +83,7 @@ class Metric(object):
     stats = _dd_get_stats()
     if stats:
       stats.gauge(self._stat_format % args, value)
+      stats.flush()
 
 
 class LatencyMetric(object):
@@ -97,6 +100,7 @@ class LatencyMetric(object):
     stats = _dd_get_stats()
     if stats:
       stats.gauge(self._stat_format % args, value)
+      stats.flush()
 
 
 class Counter(object):
@@ -113,10 +117,14 @@ class Counter(object):
     stats = _dd_get_stats()
     if stats:
       stats.increment(self._stat_format % args)
+      stats.flush()
 
   @ContainExceptions
   def IncrementBy(self, inc, *args):
-    _dd_get_stats().increment(self._stat_format % args, inc)
+    stats = _dd_get_stats()
+    if stats:
+      stats.increment(self._stat_format % args, inc)
+      stats.flush()
 
 
 class RequestCounter(Counter):

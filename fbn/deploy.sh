@@ -30,7 +30,7 @@ export TMPDIR=${TMPDIR%/}
 gcloud config set project santaupvote
 
 # https://github.com/google/upvote/issues/32
-python3 ./validate_certs.py
+python3 "${DIR}/validate_certs.py"
 
 # NOTE: this change is critical, or else for some reason all hosts end up getting reset to LOCKDOWN mode in the database
 #        see https://github.com/google/upvote/issues/21
