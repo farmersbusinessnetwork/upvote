@@ -213,6 +213,25 @@ upvote.admin.blockablepage.BlockableController = class extends ModelController {
     }
   }
 
+    /**
+   * Toggles the isCompiler state of the blockable
+   * @export
+   */
+  toggleCompiler() {
+    let orig_isCompiler = this.card['isCompiler'];
+    this.card['isCompiler'] = !this.card['isCompiler'];
+
+    this.resource.update({'id': this.id, 'isCompiler': this.card['isCompiler']})['$promise']
+        .then((card) => {
+          //this.loadCard();
+          // nop
+        })
+        .catch((reason) => {
+          this.card['isCompiler'] = orig_isCompiler;
+          this.errorService_.createDialogFromError(reason);
+        });
+  }
+
   /**
    * Upvote the current Blockable
    * @export
@@ -235,7 +254,15 @@ upvote.admin.blockablepage.BlockableController = class extends ModelController {
    */
   reset() {
     if (this.id) {
-      this.resource['reset']({'id': this.id});
+      this.resource['reset']({'id': this.id})['$promise']
+        .then((card) => {
+          //this.loadCard();
+          this.card = card;
+        })
+        .catch((reason) => {
+          this.card['isCompiler'] = orig_isCompiler;
+          this.errorService_.createDialogFromError(reason);
+        });
     }
   }
 

@@ -226,6 +226,9 @@ class BlockableHandler(base.BaseHandler):
     """Post handler for blockables."""
     blockable_id = blockable_id.lower()
     logging.info('Blockable handler POST input: %s', self.request.arguments())
+    blockable = base_models.Blockable.get_by_id(blockable_id)
+    with_context = (self.request.get('withContext').lower() == 'true')
+
     if self.request.get('recount').lower() == 'recount':
       try:
         voting_api.Recount(blockable_id)
@@ -235,16 +238,25 @@ class BlockableHandler(base.BaseHandler):
         self.abort(httplib.BAD_REQUEST, explanation='Unsupported platform')
       except Exception as e:  # pylint: disable=broad-except
         self.abort(httplib.INTERNAL_SERVER_ERROR, explanation=e.message)
-      else:
-        blockable = base_models.Blockable.get_by_id(blockable_id)
-
-        with_context = (self.request.get('withContext').lower() == 'true')
-        response_data = _GetBlockableContext([blockable])[0] if with_context else blockable
-        self.respond_json(response_data)
     elif self.request.get('reset').lower() == 'reset':
-      self._reset_blockable(blockable_id)
+      blockable = self._reset_blockable(blockable_id)
+    elif blockable is not None:
+      blockable = self._update_blockable(blockable)
     else:
-      self._insert_blockable(blockable_id, datetime.datetime.utcnow())
+      blockable = self._insert_blockable(blockable_id, datetime.datetime.utcnow())
+
+    response_data = _GetBlockableContext([blockable])[0] if with_context else blockable
+    self.respond_json(response_data)
+
+  # TODO: should really be UPDATE_BLOCKABLES
+  @base.RequireCapability(constants.PERMISSIONS.INSERT_BLOCKABLES)
+  def _update_blockable(self, blockable):
+    if isinstance(blockable, base_models.Binary):
+      if self.request.get('isCompiler') is not None:
+        blockable.is_compiler = self.request.get('isCompiler') == 'true'
+
+    blockable.put()
+    return blockable
 
   @ndb.transactional(xg=True)  # xg because respond_json() touches User.
   @base.RequireCapability(constants.PERMISSIONS.INSERT_BLOCKABLES)
@@ -293,7 +305,7 @@ class BlockableHandler(base.BaseHandler):
         blockable.notes.append(note.key)
 
       blockable.put()
-      self.respond_json(blockable)
+      return blockable
 
   @base.RequireCapability(constants.PERMISSIONS.RESET_BLOCKABLE_STATE)
   def _reset_blockable(self, blockable_id):
@@ -310,7 +322,7 @@ class BlockableHandler(base.BaseHandler):
       self.abort(httplib.INTERNAL_SERVER_ERROR, explanation=e.message)
     else:
       blockable = base_models.Blockable.get_by_id(blockable_id)
-      self.respond_json(blockable)
+      return blockable
 
 
 class AuthorizedHostCountHandler(base.BaseHandler):
@@ -506,6 +518,7 @@ class SetInstallerStateHandler(base.BaseHandler):
         client=constants.CLIENT.BIT9,
         first_seen_file_name=blockable.first_seen_name,
         cert_fingerprint=blockable.cert_id,
+        is_compiler=blockable.is_compiler,
         comment=message)
 
     change_set.DeferCommitBlockableChangeSet(blockable.key)

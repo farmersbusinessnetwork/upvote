@@ -560,14 +560,18 @@ class BallotBox(object):
     # Disable all local or blacklisting rules.
     changed_rules = []
     for rule in existing_rules:
-      if rule.policy != constants.RULE_POLICY.WHITELIST or rule.host_id:
+      if rule.policy not in {constants.RULE_POLICY.WHITELIST,
+                             constants.RULE_POLICY.WHITELIST_COMPILER} or rule.host_id:
         rule.MarkDisabled()
         changed_rules.append(rule)
 
     # Create the new globally whitelist rule.
-    whitelist_rule = self._GenerateRule(
-        policy=constants.RULE_POLICY.WHITELIST,
-        in_effect=True)
+    if self.blockable.is_compiler:
+      policy = constants.RULE_POLICY.WHITELIST_COMPILER
+    else:
+      policy = constants.RULE_POLICY.WHITELIST
+
+    whitelist_rule = self._GenerateRule(policy=policy, in_effect=True)
     whitelist_rule.InsertBigQueryRow()
 
     # Put all new/modified Rules.
@@ -619,8 +623,13 @@ class BallotBox(object):
         # Otherwise, create a new Rule to persist.
         else:
           logging.info('Creating new Rule for %s on %s', user_key.id(), host_id)
+          if self.blockable.is_compiler:
+            policy = constants.RULE_POLICY.WHITELIST_COMPILER
+          else:
+            policy = constants.RULE_POLICY.WHITELIST
+
           new_rule = self._GenerateRule(
-              policy=constants.RULE_POLICY.WHITELIST,
+              policy=policy,
               in_effect=True,
               host_id=host_id,
               user_key=user_key)

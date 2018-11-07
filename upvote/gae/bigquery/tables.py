@@ -365,6 +365,7 @@ BINARY = BigQueryTable(
         Column(name='client', choices=constants.CLIENT.SET_ALL),
         Column(name='first_seen_file_name', mode=MODE.NULLABLE),
         Column(name='cert_fingerprint', mode=MODE.NULLABLE),
+        Column(name='is_compiler', field_type=FIELD_TYPE.BOOLEAN),
         Column(name='comment', mode=MODE.NULLABLE)])
 
 

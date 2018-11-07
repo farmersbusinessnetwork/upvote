@@ -239,6 +239,9 @@ class Blockable(mixin.Base, polymodel.PolyModel):
 
   score = ndb.ComputedProperty(_CalculateScore)
 
+  # FBN
+  is_compiler = ndb.BooleanProperty(default=False)
+
   def ChangeState(self, new_state):
     """Helper method for changing the state of this Blockable.
 
@@ -399,6 +402,7 @@ class Binary(Blockable):
   def to_dict(self, include=None, exclude=None):  # pylint: disable=g-bad-name
     result = super(Binary, self).to_dict(include=include, exclude=exclude)
     result['cert_id'] = self.cert_id
+    result['is_compiler'] = self.is_compiler
     return result
 
   def InsertBigQueryRow(self, action, **kwargs):
@@ -412,7 +416,8 @@ class Binary(Blockable):
         'platform': self.GetPlatformName(),
         'client': self.GetClientName(),
         'first_seen_file_name': self.file_name,
-        'cert_fingerprint': self.cert_id}
+        'cert_fingerprint': self.cert_id,
+        'is_compiler': self.is_compiler}
     defaults.update(kwargs.copy())
 
     tables.BINARY.InsertRow(**defaults)

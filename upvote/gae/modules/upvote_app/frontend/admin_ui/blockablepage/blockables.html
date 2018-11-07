@@ -19,6 +19,20 @@
     <md-button class="md-raised md-primary" ng-click="blockableCtrl.downVote()">
       Down Vote
     </md-button>
+
+    <!-- Toggle is_compiler-->
+    <md-button class="md-raised md-primary"
+               ng-if="!blockableCtrl.card.isCompiler"
+               ng-click="blockableCtrl.toggleCompiler()">
+      Set Compiler
+    </md-button>
+    <md-button class="md-raised md-primary"
+               ng-if="blockableCtrl.card.isCompiler"
+               ng-click="hostCtrl.toggleCompiler(d)">
+      Unset Compiler
+    </md-button>
+
+
     <md-button class="md-primary" ng-click="blockableCtrl.goToBlockable(true)">
       Admin Link
     </md-button>

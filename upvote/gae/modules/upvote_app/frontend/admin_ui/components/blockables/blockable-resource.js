@@ -46,6 +46,13 @@ upvote.admin.blockables.BlockableResource = buildResource(API_PREFIX + ':id', {
       'id': '@id',
       'reset': 'reset',
     },
+  },
+  'update': {
+      'method': 'POST',
+      'params': {
+        'id': '@id',
+        'isCompiler': '@isCompiler'
+      }
   }
 });
 

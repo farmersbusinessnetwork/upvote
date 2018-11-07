@@ -64,7 +64,9 @@ goog.provide('upvote.shared.models.Vote');
  *   isInstaller: boolean,
  *   md5: string,
  *   productVersion: string,
- *   sha1: string
+ *   sha1: string,
+ *
+ *   isCompiler: boolean,
  * }}
  */
 upvote.shared.models.Bit9Binary;
@@ -94,6 +96,8 @@ upvote.shared.models.Bit9Binary;
  *   votingProhibitedReason: string,
  *
  *   bundleId: string,
+ *
+ *   isCompiler: boolean,
  * }}
  */
 upvote.shared.models.SantaBlockable;
