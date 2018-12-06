@@ -14,7 +14,7 @@
 
 service: santa-api
 runtime: python27
-instance_class: F4
+instance_class: F2
 api_version: 1
 threadsafe: true
 inbound_services:
