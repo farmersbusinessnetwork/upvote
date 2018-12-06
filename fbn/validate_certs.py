@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import asyncio
 
 # FBN
 from google.cloud import datastore
@@ -24,7 +23,7 @@ CRITICAL_MAC_OS_CERT_HASHES = [
     '33b9aee3b089c922952c9240a40a0daa271bebf192cf3f7d964722e8f2170e48']
 
 
-async def main():
+def main():
     credentials = do_auth(APP_NAME, CLIENT_JSON_PATH, SCOPES)
 
     client = datastore.Client(project='santaupvote', credentials=credentials)
@@ -33,7 +32,11 @@ async def main():
         key = client.key('Blockable', cert_sha256)
 
         items = list(client.query(kind='Rule', ancestor=key).fetch())
-        assert len(items) == 1 and items[0]['policy'] == 'WHITELIST', f"Error finding rule for Blockable: {cert_sha256}, items: {items}"
+
+        # strangely, there can be more than one rule for a binary: https://console.cloud.google.com/datastore/entities;kind=Rule;ns=__$DEFAULT$__/query/kind;filter=%5B%227%2F__key__%7CKEY%7CAN%7C112%2FS2V5KCdCbG9ja2FibGUnLCAnMzQ1YThlMDk4YmQwNDc5NGFhZWVmZGE4YzllZjU2YTBiZjNkMzcwNmQ2N2QzNWJjMGUyM2YxMWJiM2JmZmNlNScp%22%5D?organizationId=485344983296&orgonly=true&project=santaupvote&supportedpurview=organizationId
+        for item in items:
+            assert item['policy'] == 'WHITELIST' and item['in_effect'] is True, f"Error finding rule for Blockable: {cert_sha256}, items: {items}"
+
 
 if __name__ == '__main__':
-    asyncio.get_event_loop().run_until_complete(main())
+    main()
