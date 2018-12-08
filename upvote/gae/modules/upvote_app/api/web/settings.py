@@ -23,6 +23,7 @@ from webapp2_extras import routes
 from upvote.gae.datastore.models import bit9
 from upvote.gae.datastore.models import virustotal
 from upvote.gae.datastore.models import datadog
+from upvote.gae.datastore.models import fbn_santa_sync
 from upvote.gae.modules.upvote_app.api.web import base
 from upvote.gae.modules.upvote_app.api.web import monitoring
 from upvote.gae.shared.common import settings
@@ -71,6 +72,8 @@ class ApiKeys(base.BaseHandler):
       bit9.Bit9ApiAuth.SetInstance(api_key=value)
     elif key_name == 'datadog':
       datadog.DataDogApiAuth.SetInstance(api_key=value)
+    elif key_name == 'fbn_santa_sync':
+      fbn_santa_sync.FBNSantaSyncAuth.SetInstance(api_key=value)
     else:
       self.abort(httplib.BAD_REQUEST, explanation='Invalid key name')
 

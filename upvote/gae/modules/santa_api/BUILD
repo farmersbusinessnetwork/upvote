@@ -77,6 +77,9 @@ py_appengine_library(
 py_appengine_library(
     name = "auth",
     srcs = ["auth.py"],
+    deps = [
+        "//upvote/gae/datastore/models:fbn_santa_sync",
+    ]
 )
 
 py_appengine_binary(

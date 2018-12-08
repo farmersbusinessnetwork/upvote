@@ -35,6 +35,7 @@ echo Creating encryption keys used to store Upvote API secrets...
 gcloud kms keyrings create ring --location=global
 gcloud kms keys create virustotal --purpose=encryption --keyring=ring --location=global
 gcloud kms keys create datadog --purpose=encryption --keyring=ring --location=global
+gcloud kms keys create fbn_santa_sync --purpose=encryption --keyring=ring --location=global
 
 echo Granting necessary permissions to App Engine...
 SERVICE_ACCOUNT=$(gcloud iam service-accounts list --filter="App Engine app default service account" --format="value(email)")

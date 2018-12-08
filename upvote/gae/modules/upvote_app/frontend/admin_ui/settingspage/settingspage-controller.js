@@ -19,7 +19,7 @@ goog.require('upvote.admin.settings.SettingsService');
 goog.require('upvote.shared.Page');
 
 
-/** @typedef {{virustotal: string, bit9:string, datadog:string}} */
+/** @typedef {{virustotal: string, bit9:string, datadog:string, fbn_santa_sync:string}} */
 upvote.admin.settingspage.ApiKeyStruct;
 
 /**
@@ -82,6 +82,7 @@ upvote.admin.settingspage.SettingsController = class {
       'virustotal': '',
       'bit9': '',
       'datadog': '',
+      'fbn_santa_sync': '',
     };
 
     page.title = 'Settings';
@@ -127,6 +128,9 @@ upvote.admin.settingspage.SettingsController = class {
       }
       if (this.scope_['dataDogApiKey'].$dirty) {
         this.saveApiKey_('datadog');
+      }
+      if (this.scope_['fbnSantaSyncApiKey'].$dirty) {
+        this.saveApiKey_('fbn_santa_sync');
       }
     }
   }

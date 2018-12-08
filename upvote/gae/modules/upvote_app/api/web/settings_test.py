@@ -87,6 +87,13 @@ class ApiKeysTest(basetest.UpvoteTestCase):
         self.testapp.post(self.ROUTE % 'datadog', {'value': 'abc'})
       mock_set.assert_called_once_with(api_key='abc')
 
+  def testUpdateFBNSantaSyncKey(self):
+    with mock.patch.object(
+        settings.fbn_santa_sync.FBNSantaSyncAuth, 'SetInstance') as mock_set:
+      with self.LoggedInUser(admin=True):
+        self.testapp.post(self.ROUTE % 'fbn_santa_sync', {'value': 'abc'})
+      mock_set.assert_called_once_with(api_key='abc')
+
   def testBadValue(self):
     with self.LoggedInUser(admin=True):
       self.testapp.post(

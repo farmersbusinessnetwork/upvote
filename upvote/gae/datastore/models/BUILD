@@ -24,6 +24,7 @@ py_appengine_library(
         ":tickets",
         ":virustotal",
         ":datadog",
+        ":fbn_santa_sync",
     ],
 )
 
@@ -170,6 +171,15 @@ py_appengine_library(
 py_appengine_library(
     name = "datadog",
     srcs = ["datadog.py"],
+    deps = [
+        "//common/cloud_kms:kms_ndb",
+        "//upvote/gae/datastore/models:singleton",
+    ],
+)
+
+py_appengine_library(
+    name = "fbn_santa_sync",
+    srcs = ["fbn_santa_sync.py"],
     deps = [
         "//common/cloud_kms:kms_ndb",
         "//upvote/gae/datastore/models:singleton",

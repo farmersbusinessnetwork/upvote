@@ -91,7 +91,7 @@ class BaseSantaApiHandler(handler_utils.UpvoteRequestHandler):
     mode = settings.SANTA_CLIENT_VALIDATION
     if mode != common_const.VALIDATION_MODE.NONE:
       try:
-        is_valid = auth.ValidateClient(self.request.headers, uuid)
+        is_valid = auth.ValidateClient(self.request.headers, uuid, self.request)
       except Exception as e:  # pylint: disable=broad-except
         logging.warning('Client validation failed: %s', e)
         is_valid = mode == common_const.VALIDATION_MODE.FAIL_OPEN
