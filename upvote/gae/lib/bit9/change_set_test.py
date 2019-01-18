@@ -19,9 +19,6 @@ import datetime
 import mock
 
 from google.appengine.ext import deferred
-
-from absl.testing import absltest
-
 from upvote.gae.datastore import test_utils
 from upvote.gae.datastore.models import bit9
 from upvote.gae.lib.bit9 import api
@@ -30,14 +27,13 @@ from upvote.gae.lib.bit9 import constants as bit9_constants
 from upvote.gae.lib.testing import basetest
 from upvote.gae.lib.testing import bit9test
 from upvote.shared import constants
+from absl.testing import absltest
 
 
 class ChangeLocalStatesTest(basetest.UpvoteTestCase):
 
-  @mock.patch.object(change_set.monitoring, 'local_whitelisting_latency')
   @mock.patch.object(change_set, '_ChangeLocalState', return_value=True)
-  def testLatencyRecorded_Whitelist_Fulfilled(
-      self, mock_change_local_state, mock_metric):
+  def testLatencyRecorded_Whitelist_Fulfilled(self, mock_change_local_state):
 
     binary = test_utils.CreateBit9Binary(file_catalog_id='1234')
     local_rule = test_utils.CreateBit9Rule(
@@ -46,12 +42,10 @@ class ChangeLocalStatesTest(basetest.UpvoteTestCase):
     change_set._ChangeLocalStates(
         binary, [local_rule], bit9_constants.APPROVAL_STATE.APPROVED)
 
-    self.assertTrue(mock_metric.Record.called)
+    self.assertBigQueryInsertion(constants.BIGQUERY_TABLE.RULE)
 
-  @mock.patch.object(change_set.monitoring, 'local_whitelisting_latency')
   @mock.patch.object(change_set, '_ChangeLocalState', return_value=False)
-  def testLatencyRecorded_Whitelist_NotFulfilled(
-      self, mock_change_local_state, mock_metric):
+  def testLatencyRecorded_Whitelist_NotFulfilled(self, mock_change_local_state):
 
     binary = test_utils.CreateBit9Binary(file_catalog_id='1234')
     local_rule = test_utils.CreateBit9Rule(
@@ -60,12 +54,10 @@ class ChangeLocalStatesTest(basetest.UpvoteTestCase):
     change_set._ChangeLocalStates(
         binary, [local_rule], bit9_constants.APPROVAL_STATE.APPROVED)
 
-    self.assertFalse(mock_metric.Record.called)
+    self.assertNoBigQueryInsertions()
 
-  @mock.patch.object(change_set.monitoring, 'local_whitelisting_latency')
   @mock.patch.object(change_set, '_ChangeLocalState', return_value=True)
-  def testLatencyRecorded_NonWhitelist(
-      self, mock_change_local_state, mock_metric):
+  def testLatencyRecorded_NonWhitelist(self, mock_change_local_state):
 
     binary = test_utils.CreateBit9Binary(file_catalog_id='1234')
     local_rule = test_utils.CreateBit9Rule(
@@ -75,7 +67,7 @@ class ChangeLocalStatesTest(basetest.UpvoteTestCase):
     change_set._ChangeLocalStates(
         binary, [local_rule], bit9_constants.APPROVAL_STATE.APPROVED)
 
-    self.assertFalse(mock_metric.Record.called)
+    self.assertBigQueryInsertion(constants.BIGQUERY_TABLE.RULE)
 
 
 class CommitBlockableChangeSetTest(bit9test.Bit9TestCase):
@@ -117,6 +109,8 @@ class CommitBlockableChangeSetTest(bit9test.Bit9TestCase):
     self.assertTrue(self.local_rule.key.get().is_fulfilled)
     self.assertTrue(self.local_rule.key.get().is_committed)
     self.assertIsNone(change.key.get())
+
+    self.assertBigQueryInsertion(constants.BIGQUERY_TABLE.RULE)
 
   def testWhitelist_LocalRule_NotFulfilled(self):
     change = test_utils.CreateRuleChangeSet(
@@ -252,6 +246,8 @@ class CommitBlockableChangeSetTest(bit9test.Bit9TestCase):
     self.assertTrue(self.global_rule.key.get().is_committed)
     self.assertIsNone(change.key.get())
 
+    self.assertBigQueryInsertions([constants.BIGQUERY_TABLE.RULE] * 2)
+
   def testBlacklist_GlobalRule(self):
     change = test_utils.CreateRuleChangeSet(
         self.binary.key,
@@ -347,6 +343,8 @@ class CommitBlockableChangeSetTest(bit9test.Bit9TestCase):
     self.assertTrue(other_local_rule.key.get().is_committed)
     self.assertTrue(self.global_rule.key.get().is_committed)
     self.assertIsNone(change.key.get())
+
+    self.assertBigQueryInsertions([constants.BIGQUERY_TABLE.RULE] * 2)
 
   def testTailDefer(self):
     test_utils.CreateRuleChangeSet(

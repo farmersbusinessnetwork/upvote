@@ -18,16 +18,17 @@ import mock
 
 from google.appengine.ext import ndb
 
+from upvote.gae import settings
 from upvote.gae.datastore import test_utils
 from upvote.gae.datastore import utils as datastore_utils
 from upvote.gae.datastore.models import base
 from upvote.gae.datastore.models import bit9
+from upvote.gae.datastore.models import host as host_models
 from upvote.gae.datastore.models import santa
 from upvote.gae.datastore.models import user as user_models
 from upvote.gae.datastore.models import vote as vote_models
 from upvote.gae.lib.testing import basetest
 from upvote.gae.lib.voting import api
-from upvote.gae.shared.common import settings
 from upvote.shared import constants
 
 
@@ -50,7 +51,7 @@ class GetBlockableTest(basetest.UpvoteTestCase):
   def testNotFound(self):
     sha256 = test_utils.RandomSHA256()
     test_utils.CreateSantaBlockable(id=sha256)
-    with self.assertRaises(api.BlockableNotFound):
+    with self.assertRaises(api.BlockableNotFoundError):
       api._GetBlockable('abcdef')
 
 
@@ -63,16 +64,16 @@ class GetPlatformTest(basetest.UpvoteTestCase):
 
   def testUnsupported(self):
     blockable = test_utils.CreateBlockable()
-    with self.assertRaises(api.UnsupportedPlatform):
+    with self.assertRaises(api.UnsupportedPlatformError):
       api._GetPlatform(blockable)
 
 
 class VoteTest(basetest.UpvoteTestCase):
 
-  def testInvalidVoteWeight(self):
+  def testInvalidVoteWeightError(self):
     sha256 = test_utils.RandomSHA256()
     test_utils.CreateSantaBlockable(id=sha256)
-    with self.assertRaises(api.InvalidVoteWeight):
+    with self.assertRaises(api.InvalidVoteWeightError):
       with self.LoggedInUser() as user:
         api.Vote(user, sha256, True, -1)
 
@@ -116,7 +117,7 @@ class BallotBoxTest(basetest.UpvoteTestCase):
     # Verify the score change in BigQuery.
     predicate = lambda c: c[1].get('action') == 'SCORE_CHANGE'
     calls = self.GetBigQueryCalls(predicate=predicate)
-    self.assertEqual(1, len(calls))
+    self.assertLen(calls, 1)
     self.assertEqual(self.local_threshold, calls[0][1].get('score'))
 
   def testRowPersistence_Santa(self):
@@ -135,7 +136,7 @@ class BallotBoxTest(basetest.UpvoteTestCase):
     # Verify the score change in BigQuery.
     predicate = lambda c: c[1].get('action') == 'SCORE_CHANGE'
     calls = self.GetBigQueryCalls(predicate=predicate)
-    self.assertEqual(1, len(calls))
+    self.assertLen(calls, 1)
     self.assertEqual(self.local_threshold, calls[0][1].get('score'))
 
   def testBit9(self):
@@ -150,14 +151,14 @@ class BallotBoxTest(basetest.UpvoteTestCase):
     self.assertEqual(self.local_threshold, binary.score)
 
     rules = binary.GetRules()
-    self.assertEqual(1, len(rules))
+    self.assertLen(rules, 1)
     self.assertFalse(rules[0].is_committed)
     self.assertTrue(rules[0].in_effect)
     self.assertEqual(user.key, rules[0].user_key)
     self.assertEqual(host.key.id(), rules[0].host_id)
 
     changes = bit9.RuleChangeSet.query().fetch()
-    self.assertEqual(1, len(changes))
+    self.assertLen(changes, 1)
     self.assertSameElements([rules[0].key], changes[0].rule_keys)
     self.assertEqual(constants.RULE_POLICY.WHITELIST, changes[0].change_type)
     self.assertTrue(datastore_utils.KeyHasAncestor(changes[0].key, binary.key))
@@ -175,7 +176,7 @@ class BallotBoxTest(basetest.UpvoteTestCase):
       ballot_box.Vote(True, user, vote_weight=self.local_threshold)
 
     self.assertEqual(self.local_threshold, binary.score)
-    self.assertEqual(0, len(binary.GetRules()))
+    self.assertLen(binary.GetRules(), 0)
     self.assertEqual(0, bit9.RuleChangeSet.query().count())
 
     self.assertTaskCount(constants.TASK_QUEUE.BIT9_COMMIT_CHANGE, 0)
@@ -198,7 +199,7 @@ class BallotBoxTest(basetest.UpvoteTestCase):
     # Verify the score change in BigQuery.
     predicate = lambda c: c[1].get('action') == 'SCORE_CHANGE'
     calls = self.GetBigQueryCalls(predicate=predicate)
-    self.assertEqual(1, len(calls))
+    self.assertLen(calls, 1)
     self.assertEqual(1, calls[0][1].get('score'))
 
   def testNoVote_FromUser(self):
@@ -220,14 +221,14 @@ class BallotBoxTest(basetest.UpvoteTestCase):
     # Verify the score change in BigQuery.
     predicate = lambda c: c[1].get('action') == 'SCORE_CHANGE'
     calls = self.GetBigQueryCalls(predicate=predicate)
-    self.assertEqual(1, len(calls))
+    self.assertLen(calls, 1)
     self.assertEqual(-user.vote_weight, calls[0][1].get('score'))
 
   def testNoVote_SantaBundle(self):
     """Restrict no vote for bundles."""
 
     ballot_box = api.SantaBallotBox(self.santa_bundle.key.id())
-    with self.assertRaises(api.OperationNotAllowed):
+    with self.assertRaises(api.OperationNotAllowedError):
       with self.LoggedInUser() as user:
         ballot_box.Vote(False, user)
 
@@ -252,7 +253,7 @@ class BallotBoxTest(basetest.UpvoteTestCase):
     # Verify the score change in BigQuery.
     predicate = lambda c: c[1].get('action') == 'SCORE_CHANGE'
     calls = self.GetBigQueryCalls(predicate=predicate)
-    self.assertEqual(1, len(calls))
+    self.assertLen(calls, 1)
     self.assertEqual(user.vote_weight, calls[0][1].get('score'))
 
   def testFromUser_VoteWeight(self):
@@ -275,7 +276,7 @@ class BallotBoxTest(basetest.UpvoteTestCase):
     # Verify the score change in BigQuery.
     predicate = lambda c: c[1].get('action') == 'SCORE_CHANGE'
     calls = self.GetBigQueryCalls(predicate=predicate)
-    self.assertEqual(1, len(calls))
+    self.assertLen(calls, 1)
     self.assertEqual(blockable.score, calls[0][1].get('score'))
 
   def testFromUser_VoteWeight_Zero(self):
@@ -337,7 +338,7 @@ class BallotBoxTest(basetest.UpvoteTestCase):
     # Verify the score change in BigQuery.
     predicate = lambda c: c[1].get('action') == 'SCORE_CHANGE'
     calls = self.GetBigQueryCalls(predicate=predicate)
-    self.assertEqual(1, len(calls))
+    self.assertLen(calls, 1)
     self.assertEqual(blockable.score, calls[0][1].get('score'))
 
   def testFromUser_ArchivedVote_NewVoteWeight(self):
@@ -360,7 +361,7 @@ class BallotBoxTest(basetest.UpvoteTestCase):
     self.assertEqual(blockable.score, new_weight)
 
     votes = vote_models.Vote.query(ancestor=self.santa_blockable1.key).fetch()
-    self.assertEqual(2, len(votes))
+    self.assertLen(votes, 2)
 
     old_vote = next(vote for vote in votes if not vote.in_effect)
     self.assertNotEqual(new_weight, old_vote.weight)
@@ -374,13 +375,13 @@ class BallotBoxTest(basetest.UpvoteTestCase):
     # Verify the score change in BigQuery.
     predicate = lambda c: c[1].get('action') == 'SCORE_CHANGE'
     calls = self.GetBigQueryCalls(predicate=predicate)
-    self.assertEqual(1, len(calls))
+    self.assertLen(calls, 1)
     self.assertEqual(blockable.score, calls[0][1].get('score'))
 
   def testNonexistentBlockable(self):
     """Voting on a blockable that doesn't exist in the datastore."""
     ballot_box = api.SantaBallotBox('bbbbllllfffftttt')
-    with self.assertRaises(api.BlockableNotFound):
+    with self.assertRaises(api.BlockableNotFoundError):
       with self.LoggedInUser() as user:
         ballot_box.Vote(True, user)
 
@@ -447,7 +448,7 @@ class BallotBoxTest(basetest.UpvoteTestCase):
     # Verify the score change in BigQuery.
     predicate = lambda c: c[1].get('action') == 'SCORE_CHANGE'
     calls = self.GetBigQueryCalls(predicate=predicate)
-    self.assertEqual(1, len(calls))
+    self.assertLen(calls, 1)
     self.assertEqual(-admin.vote_weight, calls[0][1].get('score'))
 
   def testYesVote_FromAdmin_SuspectBlockable(self):
@@ -472,7 +473,7 @@ class BallotBoxTest(basetest.UpvoteTestCase):
     # Verify the score change in BigQuery.
     predicate = lambda c: c[1].get('action') == 'SCORE_CHANGE'
     calls = self.GetBigQueryCalls(predicate=predicate)
-    self.assertEqual(1, len(calls))
+    self.assertLen(calls, 1)
     self.assertEqual(admin.vote_weight, calls[0][1].get('score'))
 
   def testGlobalWhitelist(self):
@@ -501,7 +502,7 @@ class BallotBoxTest(basetest.UpvoteTestCase):
 
     # Verify that global whitelist rule was created for the bundle.
     rules = santa.SantaRule.query(ancestor=self.santa_bundle.key).fetch()
-    self.assertEqual(1, len(rules))
+    self.assertLen(rules, 1)
     self.assertEqual(constants.RULE_TYPE.PACKAGE, rules[0].rule_type)
     self.assertEqual(constants.RULE_POLICY.WHITELIST, rules[0].policy)
 
@@ -542,7 +543,7 @@ class BallotBoxTest(basetest.UpvoteTestCase):
 
     # Verify that local whitelist rules were created for the bundle.
     rules = santa.SantaRule.query(ancestor=self.santa_bundle.key).fetch()
-    self.assertEqual(self.local_threshold, len(rules))
+    self.assertLen(rules, self.local_threshold)
     self.assertEqual(constants.RULE_TYPE.PACKAGE, rules[0].rule_type)
     self.assertEqual(constants.RULE_POLICY.WHITELIST, rules[0].policy)
 
@@ -590,7 +591,7 @@ class BallotBoxTest(basetest.UpvoteTestCase):
     # Verify all the entities.
     self.assertIsNotNone(base.Blockable.get_by_id(sha))
     self.assertEqual(len(users) - 1, len(blockable.GetVotes()))
-    self.assertEqual(len(users), base.Host.query().count())
+    self.assertLen(users, host_models.Host.query().count())
     self.assertEqual(len(users) - 1, len(blockable.GetRules()))
 
     # Ensure that even with a yes vote, the voter can't globally whitelist the
@@ -628,7 +629,7 @@ class BallotBoxTest(basetest.UpvoteTestCase):
     # Verify the score change in BigQuery.
     predicate = lambda c: c[1].get('action') == 'SCORE_CHANGE'
     calls = self.GetBigQueryCalls(predicate=predicate)
-    self.assertEqual(1, len(calls))
+    self.assertLen(calls, 1)
     self.assertEqual(-admin.vote_weight, calls[0][1].get('score'))
 
   def testGloballyWhitelist_RuleNoRules(self):
@@ -688,16 +689,16 @@ class BallotBoxTest(basetest.UpvoteTestCase):
         test_utils.CreateSantaHost(primary_user=other_user.nickname)
         ballot_box.Vote(True, other_user)
 
-    self.assertEqual(self.local_threshold - 1, len(blockable.GetVotes()))
+    self.assertLen(blockable.GetVotes(), self.local_threshold - 1)
     self.assertEqual(constants.STATE.UNTRUSTED, blockable.state)
 
     with self.LoggedInUser(user=user):
       ballot_box.Vote(True, user)
 
-    self.assertEqual(self.local_threshold, len(blockable.GetVotes()))
+    self.assertLen(blockable.GetVotes(), self.local_threshold)
 
     rules = base.Rule.query().fetch()
-    self.assertEqual(self.local_threshold, len(rules))
+    self.assertLen(rules, self.local_threshold)
     self.assertEqual(
         set([other.key for other in other_users] + [user.key]),
         set(rule.user_key for rule in rules))
@@ -727,7 +728,7 @@ class BallotBoxTest(basetest.UpvoteTestCase):
 
     blockable = blockable.key.get()
 
-    self.assertEqual(self.local_threshold, len(blockable.GetVotes()))
+    self.assertLen(blockable.GetVotes(), self.local_threshold)
     self.assertEqual(self.local_threshold, blockable.score)
     self.assertEqual(
         constants.STATE.APPROVED_FOR_LOCAL_WHITELISTING, blockable.state)
@@ -735,10 +736,10 @@ class BallotBoxTest(basetest.UpvoteTestCase):
     with self.LoggedInUser(user=user):
       ballot_box.Vote(True, user)
 
-    self.assertEqual(self.local_threshold + 1, len(blockable.GetVotes()))
+    self.assertLen(blockable.GetVotes(), self.local_threshold + 1)
 
     rules = base.Rule.query().fetch()
-    self.assertEqual(self.local_threshold + 1, len(rules))
+    self.assertLen(rules, self.local_threshold + 1)
     self.assertEqual(
         set([other.key for other in other_users] + [user.key]),
         set(rule.user_key for rule in rules))
@@ -826,7 +827,7 @@ class BallotBoxTest(basetest.UpvoteTestCase):
 
     # Verify that the blockable reached the local threshold and is available for
     # anyone else who wants to vote for it.
-    self.assertEqual(local_threshold, len(blockable.GetVotes()))
+    self.assertLen(blockable.GetVotes(), local_threshold)
     self.assertEqual(local_threshold, blockable.score)
     self.assertEqual(
         constants.STATE.APPROVED_FOR_LOCAL_WHITELISTING, blockable.state)
@@ -834,7 +835,7 @@ class BallotBoxTest(basetest.UpvoteTestCase):
     # We should expect to see one local rule for each machine.
     rules = base.Rule.query().fetch()
     expected_rule_count = num_voters * num_hosts_per_voter
-    self.assertEqual(expected_rule_count, len(rules))
+    self.assertLen(rules, expected_rule_count)
     self.assertEqual(
         set([voter.key for voter in voters]),
         set(rule.user_key for rule in rules))
@@ -847,7 +848,7 @@ class BallotBoxTest(basetest.UpvoteTestCase):
   def testKeyStructure(self):
     ballot_box = api.SantaBallotBox(self.santa_blockable1.key.id())
 
-    self.assertEqual(0, len(self.santa_blockable1.GetVotes()))
+    self.assertLen(self.santa_blockable1.GetVotes(), 0)
 
     with self.LoggedInUser() as user:
       ballot_box.Vote(True, user)
@@ -855,7 +856,7 @@ class BallotBoxTest(basetest.UpvoteTestCase):
       # Use Blockable.GetVotes to ensure our vote counts towards the blockable's
       # score.
       votes = self.santa_blockable1.GetVotes()
-      self.assertEqual(1, len(votes))
+      self.assertLen(votes, 1)
       new_vote = votes[0]
 
       # Verify that the key is in the expected structure.
@@ -894,7 +895,7 @@ class BallotBoxTest(basetest.UpvoteTestCase):
     votes = vote_models.Vote.query(ancestor=self.santa_blockable1.key).fetch()
     self.assertTrue(any(vote for vote in votes if vote.in_effect))
     self.assertTrue(any(vote for vote in votes if not vote.in_effect))
-    self.assertEqual(len(votes), 2)
+    self.assertLen(votes, 2)
 
     old_vote = [vote for vote in votes if not vote.in_effect][0]
     new_vote = [vote for vote in votes if vote.in_effect][0]
@@ -1397,14 +1398,14 @@ class ResetTest(basetest.UpvoteTestCase):
     # pylint: enable=g-explicit-bool-comparison, singleton-comparison
 
     self.assertEqual(total_votes.count(), 11)
-    self.assertEqual(len(blockable.GetVotes()), 0)
+    self.assertLen(blockable.GetVotes(), 0)
     self.assertEqual(retrieved_rules.count(), 2)
     self.assertEqual(retrieved_in_effect_rules.count(), 1)
 
     self.assertBigQueryInsertions([TABLE.BINARY, TABLE.RULE])
 
   def testBundles_NotAllowed(self):
-    with self.assertRaises(api.OperationNotAllowed):
+    with self.assertRaises(api.OperationNotAllowedError):
       api.Reset(self.santa_bundle.key.id())
 
   def testBit9(self):
@@ -1427,7 +1428,7 @@ class ResetTest(basetest.UpvoteTestCase):
     self.assertEntityCount(bit9.RuleChangeSet, 2)
 
     rules = binary.GetRules()
-    self.assertEqual(1, len(rules))
+    self.assertLen(rules, 1)
     self.assertFalse(rules[0].is_committed)
     self.assertTrue(rules[0].in_effect)
     self.assertEqual(constants.RULE_POLICY.REMOVE, rules[0].policy)

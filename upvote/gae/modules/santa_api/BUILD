@@ -1,7 +1,7 @@
 load(
     "//upvote:builddefs.bzl",
     "py_appengine_library",
-    "py_appengine_binary",
+    "upvote_appengine_binary",
     "upvote_appengine_test",
 )
 
@@ -24,14 +24,15 @@ py_appengine_library(
         ":auth",
         ":constants",
         ":monitoring",
+        "//upvote/gae:settings",
         "//upvote/gae/bigquery:tables",
         "//upvote/gae/datastore:utils",
+        "//upvote/gae/datastore/models:host",
         "//upvote/gae/datastore/models:santa",
         "//upvote/gae/datastore/models:user",
         "//upvote/gae/datastore/models:utils",
         "//upvote/gae/lib/analysis:metrics",
         "//upvote/gae/shared/common:big_red",
-        "//upvote/gae/shared/common:settings",
         "//upvote/gae/shared/common:user_map",
         "//upvote/gae/taskqueue:utils",
         "//upvote/gae/utils:handler_utils",
@@ -82,7 +83,7 @@ py_appengine_library(
     ]
 )
 
-py_appengine_binary(
+upvote_appengine_binary(
     name = "santa_api_binary",
     srcs = ["main.py"],
     configs = [
@@ -92,7 +93,6 @@ py_appengine_binary(
     deps = [
         ":santa_api_library",
     ],
-    overwrite_appengine_config = False,
 )
 
 # AppEngine Unit Tests
@@ -109,8 +109,8 @@ upvote_appengine_test(
         "//upvote/gae/datastore:test_utils",
         "//upvote/gae/datastore/models:santa",
         "//upvote/gae/lib/testing:basetest",
-        "//upvote/gae/shared/common:settings_utils",
         "//upvote/gae/utils:handler_utils",
+        "//upvote/gae/utils:settings_utils",
         "//upvote/shared:constants",
     ],
 )

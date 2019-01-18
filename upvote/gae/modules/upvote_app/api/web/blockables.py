@@ -29,7 +29,6 @@ from upvote.gae.datastore.models import bit9 as bit9_models
 from upvote.gae.datastore.models import santa as santa_models
 from upvote.gae.lib.bit9 import change_set
 from upvote.gae.lib.voting import api as voting_api
-from upvote.gae.modules.upvote_app.api.web import base
 from upvote.gae.modules.upvote_app.api.web import monitoring
 from upvote.gae.utils import handler_utils
 from upvote.gae.utils import xsrf_utils
@@ -106,7 +105,7 @@ def _GetBlockableContext(blockables):
   return events_with_context
 
 
-class BlockableQueryHandler(base.BaseQueryHandler):
+class BlockableQueryHandler(handler_utils.BaseQueryHandler):
   """Handlers for querying blockables."""
 
   # NOTE: Value will be dynamically set but must have a default to
@@ -180,7 +179,7 @@ class BlockableQueryHandler(base.BaseQueryHandler):
       query = self._UnfilteredBlockablesQuery()
     return query
 
-  @base.RequireCapability(constants.PERMISSIONS.VIEW_OTHER_BLOCKABLES)
+  @handler_utils.RequireCapability(constants.PERMISSIONS.VIEW_OTHER_BLOCKABLES)
   def _FlaggedBlockablesQuery(self):
     # pylint: disable=g-explicit-bool-comparison, singleton-comparison
     return self.MODEL_CLASS.query(
@@ -188,7 +187,7 @@ class BlockableQueryHandler(base.BaseQueryHandler):
         ).order(-self.MODEL_CLASS.updated_dt)
     # pylint: enable=g-explicit-bool-comparison, singleton-comparison
 
-  @base.RequireCapability(constants.PERMISSIONS.VIEW_OTHER_BLOCKABLES)
+  @handler_utils.RequireCapability(constants.PERMISSIONS.VIEW_OTHER_BLOCKABLES)
   def _SuspectBlockablesQuery(self):
     return self.MODEL_CLASS.query(
         self.MODEL_CLASS.state == constants.STATE.SUSPECT
@@ -199,12 +198,12 @@ class BlockableQueryHandler(base.BaseQueryHandler):
         self.MODEL_CLASS.key.IN(blockable_keys)
         ).order(self.MODEL_CLASS.key)
 
-  @base.RequireCapability(constants.PERMISSIONS.VIEW_OTHER_BLOCKABLES)
+  @handler_utils.RequireCapability(constants.PERMISSIONS.VIEW_OTHER_BLOCKABLES)
   def _UnfilteredBlockablesQuery(self):
     return self.MODEL_CLASS.query()
 
 
-class BlockableHandler(base.BaseHandler):
+class BlockableHandler(handler_utils.UserFacingHandler):
   """Handlers for interacting with individual blockables."""
 
   def get(self, blockable_id):  # pylint: disable=g-bad-name
@@ -221,7 +220,7 @@ class BlockableHandler(base.BaseHandler):
     self.respond_json(response_data)
 
   @xsrf_utils.RequireToken
-  @base.RequireCapability(constants.PERMISSIONS.VIEW_OTHER_BLOCKABLES)
+  @handler_utils.RequireCapability(constants.PERMISSIONS.VIEW_OTHER_BLOCKABLES)
   def post(self, blockable_id):  # pylint: disable=g-bad-name
     """Post handler for blockables."""
     blockable_id = blockable_id.lower()
@@ -232,9 +231,9 @@ class BlockableHandler(base.BaseHandler):
     if self.request.get('recount').lower() == 'recount':
       try:
         voting_api.Recount(blockable_id)
-      except voting_api.BlockableNotFound:
+      except voting_api.BlockableNotFoundError:
         self.abort(httplib.NOT_FOUND, explanation='Blockable not found')
-      except voting_api.UnsupportedPlatform:
+      except voting_api.UnsupportedPlatformError:
         self.abort(httplib.BAD_REQUEST, explanation='Unsupported platform')
       except Exception as e:  # pylint: disable=broad-except
         self.abort(httplib.INTERNAL_SERVER_ERROR, explanation=e.message)
@@ -259,7 +258,7 @@ class BlockableHandler(base.BaseHandler):
     return blockable
 
   @ndb.transactional(xg=True)  # xg because respond_json() touches User.
-  @base.RequireCapability(constants.PERMISSIONS.INSERT_BLOCKABLES)
+  @handler_utils.RequireCapability(constants.PERMISSIONS.INSERT_BLOCKABLES)
   def _insert_blockable(self, blockable_id, timestamp):
 
     blockable_type = self.request.get('type')
@@ -307,16 +306,16 @@ class BlockableHandler(base.BaseHandler):
       blockable.put()
       return blockable
 
-  @base.RequireCapability(constants.PERMISSIONS.RESET_BLOCKABLE_STATE)
+  @handler_utils.RequireCapability(constants.PERMISSIONS.RESET_BLOCKABLE_STATE)
   def _reset_blockable(self, blockable_id):
     logging.info('Blockable reset: %s', blockable_id)
     try:
       voting_api.Reset(blockable_id)
-    except voting_api.BlockableNotFound:
+    except voting_api.BlockableNotFoundError:
       self.abort(httplib.NOT_FOUND)
-    except voting_api.UnsupportedPlatform:
+    except voting_api.UnsupportedPlatformError:
       self.abort(httplib.BAD_REQUEST, explanation='Unsupported platform')
-    except voting_api.OperationNotAllowed as e:
+    except voting_api.OperationNotAllowedError as e:
       self.abort(httplib.FORBIDDEN, explanation=e.message)
     except Exception as e:  # pylint: disable=broad-except
       self.abort(httplib.INTERNAL_SERVER_ERROR, explanation=e.message)
@@ -325,10 +324,10 @@ class BlockableHandler(base.BaseHandler):
       return blockable
 
 
-class AuthorizedHostCountHandler(base.BaseHandler):
+class AuthorizedHostCountHandler(handler_utils.UserFacingHandler):
   """Handler for providing the number of hosts able to run a blockable."""
 
-  @base.RequireCapability(constants.PERMISSIONS.VIEW_OTHER_BLOCKABLES)
+  @handler_utils.RequireCapability(constants.PERMISSIONS.VIEW_OTHER_BLOCKABLES)
   def get(self, blockable_id):
     blockable_id = blockable_id.lower()
     blockable = base_models.Blockable.get_by_id(blockable_id)
@@ -361,7 +360,7 @@ class AuthorizedHostCountHandler(base.BaseHandler):
       self.respond_json(len(authorized_hosts))
 
 
-class UniqueEventCountHandler(base.BaseHandler):
+class UniqueEventCountHandler(handler_utils.UserFacingHandler):
   """Handler for providing the number of times a blockable has been blocked."""
 
   def get(self, blockable_id):
@@ -386,7 +385,7 @@ class UniqueEventCountHandler(base.BaseHandler):
     self.respond_json(num_events)
 
 
-class PackageContentsHandler(base.BaseHandler):
+class PackageContentsHandler(handler_utils.UserFacingHandler):
   """Handler for providing content metadata associated with a package."""
 
   def get(self, package_id):
@@ -412,7 +411,7 @@ class PackageContentsHandler(base.BaseHandler):
     self.respond_json(binaries)
 
 
-class PendingStateChangeHandler(base.BaseHandler):
+class PendingStateChangeHandler(handler_utils.UserFacingHandler):
   """Determines whether a Bit9 blockable has a pending state change."""
 
   def get(self, blockable_id):
@@ -444,7 +443,7 @@ class PendingStateChangeHandler(base.BaseHandler):
     self.respond_json(has_pending_rules)
 
 
-class PendingInstallerStateChangeHandler(base.BaseHandler):
+class PendingInstallerStateChangeHandler(handler_utils.UserFacingHandler):
   """Determines whether a Bit9 blockable has a pending state change."""
 
   def get(self, blockable_id):
@@ -471,7 +470,7 @@ class PendingInstallerStateChangeHandler(base.BaseHandler):
     self.respond_json(has_pending_rules)
 
 
-class SetInstallerStateHandler(base.BaseHandler):
+class SetInstallerStateHandler(handler_utils.UserFacingHandler):
   """Provides an interface to change a Bit9 blockable's installer state."""
 
   @ndb.transactional

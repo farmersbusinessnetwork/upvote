@@ -14,8 +14,8 @@
 
 """Application-wide configuration."""
 
+from upvote.gae import settings
 from upvote.gae.datastore.models import rule
-from upvote.gae.shared.common import settings
 
 
 # FBN  This NEEDS to happen at least once to ensure you don't DOS yourself

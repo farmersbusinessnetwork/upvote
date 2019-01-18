@@ -24,12 +24,11 @@ from upvote.gae.datastore.models import base as base_models
 from upvote.gae.datastore.models import santa as santa_models
 from upvote.gae.lib.analysis import api as analysis_api
 from upvote.gae.lib.analysis.virustotal import constants as vt_constants
-from upvote.gae.modules.upvote_app.api.web import base
 from upvote.gae.modules.upvote_app.api.web import monitoring
 from upvote.gae.utils import handler_utils
 
 
-class Lookup(base.BaseHandler):
+class Lookup(handler_utils.UserFacingHandler):
   """Handler for looking up binary info."""
 
   @property
@@ -51,7 +50,7 @@ class Lookup(base.BaseHandler):
       for key in keys:
         try:
           results = analysis_api.VirusTotalLookup(key.id())
-        except analysis_api.LookupFailure as e:  # pylint: disable=broad-except
+        except analysis_api.FailedLookupError as e:  # pylint: disable=broad-except
           # NOTE: We suppress all errors here because an omitted entry will be
           # considered an error and prevent the response from being considered
           # fully analyzed.
@@ -71,7 +70,7 @@ class Lookup(base.BaseHandler):
     else:
       try:
         results = analysis_api.VirusTotalLookup(blockable_id)
-      except analysis_api.LookupFailure as e:  # pylint: disable=broad-except
+      except analysis_api.FailedLookupError as e:  # pylint: disable=broad-except
         logging.exception(str(e))
         self.abort(httplib.NOT_FOUND)
       else:

@@ -15,25 +15,26 @@
 """Cron job for performing a scheduled Datastore backup."""
 
 import datetime
-import httplib
 import logging
 
 import webapp2
 from webapp2_extras import routes
 
-import upvote.gae.shared.common.google_cloud_lib_fixer  # pylint: disable=unused-import
+import upvote.gae.lib.cloud.google_cloud_lib_fixer  # pylint: disable=unused-import
 # pylint: disable=g-bad-import-order,g-import-not-at-top
 
 from google.appengine.api import datastore
 from google.appengine.api import taskqueue
-from google.appengine.api import users
 from google.appengine.ext.ndb import metadata
-from upvote.gae.shared.common import settings
-from upvote.gae.datastore.models import user as user_models
+from upvote.gae import settings
 from upvote.shared import constants
+from upvote.gae.shared.common import monitoring
 from upvote.gae.utils import env_utils
 from upvote.gae.utils import handler_utils
+from upvote.monitoring import metrics
 
+
+_DATASTORE_BACKUPS = monitoring.Counter(metrics.DATASTORE.BACKUPS)
 
 _BACKUP_PREFIX = 'datastore_backup'
 
@@ -51,7 +52,7 @@ def _DailyBackupExists():
   return query.Get(1)
 
 
-class DatastoreBackup(handler_utils.UpvoteRequestHandler):
+class DatastoreBackup(handler_utils.CronJobHandler):
   """Handler for performing Datastore backups.
 
   NOTE: This backup does not pause writes to datastore during processing so the
@@ -59,38 +60,12 @@ class DatastoreBackup(handler_utils.UpvoteRequestHandler):
   such, there may be inconsistencies in the data across entity types.
   """
 
-  def dispatch(self):
-
-    appengine_user = users.get_current_user()
-    logging.info(
-        'Request initiated by %s',
-        appengine_user.email() if appengine_user else 'cron')
-
-    # Cron-triggered exports will not have a requesting user. Only allow these
-    # in prod.
-    prod_cron_export = env_utils.RunningInProd() and not appengine_user
-    logging.info(
-        'This is%s an automatic production export',
-        '' if prod_cron_export else ' not')
-
-    # If there is a requesting user, only proceed if the user has manual export
-    # permissions.
-    user_has_permission = False
-    if appengine_user:
-      current_user = user_models.User.GetOrInsert(
-          appengine_user=appengine_user)
-      user_has_permission = current_user.HasPermissionTo(
-          constants.PERMISSIONS.TRIGGER_MANUAL_DATA_EXPORT)
-      logging.info(
-          'User %s does%s have permission to perform a manual export',
-          appengine_user.email(), '' if user_has_permission else ' not')
-
-    if prod_cron_export or user_has_permission:
-      super(DatastoreBackup, self).dispatch()
-    else:
-      self.abort(httplib.FORBIDDEN)
-
   def get(self):  # pylint: disable=g-bad-name
+
+    # Only run backups in prod.
+    if not env_utils.RunningInProd():
+      logging.info('Datastore backups are only run in prod')
+      return
 
     # Only run one backup per day.
     if _DailyBackupExists():
@@ -111,11 +86,14 @@ class DatastoreBackup(handler_utils.UpvoteRequestHandler):
     # Dump the backup onto a task queue. Don't worry about catching Exceptions,
     # anything that gets raised will be dealt with in UpvoteRequestHandler and
     # reported as a 500.
+    logging.info('Starting a new Datastore backup')
     taskqueue.add(
         url='/_ah/datastore_admin/backup.create',
         params=params,
         target='ah-builtin-python-bundle',
         queue_name=constants.TASK_QUEUE.BACKUP)
+
+    _DATASTORE_BACKUPS.Increment()
 
 
 ROUTES = routes.PathPrefixRoute('/datastore', [

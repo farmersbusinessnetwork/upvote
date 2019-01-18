@@ -20,11 +20,10 @@ from webapp2_extras import routes
 
 from upvote.gae.modules.upvote_app.api.web import alerts
 from upvote.gae.modules.upvote_app.api.web import blockables
-from upvote.gae.modules.upvote_app.api.web import constants
 from upvote.gae.modules.upvote_app.api.web import emergency
 from upvote.gae.modules.upvote_app.api.web import events
 from upvote.gae.modules.upvote_app.api.web import hosts
-from upvote.gae.modules.upvote_app.api.web import index_handler
+from upvote.gae.modules.upvote_app.api.web import index
 from upvote.gae.modules.upvote_app.api.web import lookups
 from upvote.gae.modules.upvote_app.api.web import rules
 from upvote.gae.modules.upvote_app.api.web import settings
@@ -44,7 +43,6 @@ _ALL_ROUTES = [
             webapp2.Route('/ack', handler=handler_utils.AckHandler),
             alerts.ROUTES,
             blockables.ROUTES,
-            constants.ROUTES,
             emergency.ROUTES,
             events.ROUTES,
             hosts.ROUTES,
@@ -55,17 +53,8 @@ _ALL_ROUTES = [
             votes.ROUTES
         ]),
 
-    # Index handler
-    webapp2.Route(
-        r'/admin<:/?><:.*>',
-        handler=index_handler.IndexHandler,
-        handler_method='GetAdmin',
-        methods=['GET']),
-    webapp2.Route(
-        r'/<:/?><:.*>',
-        handler=index_handler.IndexHandler,
-        handler_method='GetUser',
-        methods=['GET']),
+    index.ADMIN_ROUTE,
+    index.USER_ROUTE,
 ]
 
 app = webapp2.WSGIApplication(routes=_ALL_ROUTES)

@@ -16,10 +16,9 @@ def ng_template_bundle(
         outs = [
             name + "_bundle.js",
         ],
-        cmd = "$(location //common:ng_template) $(location @npm_html2js//:ng-html2js_bin) %s %s %s %s $(SRCS) > $@" % (strip_prefix, prepend_prefix, module_name, goog_provide),
+        cmd = "$(location //common:ng_template) $(location @npm//ng-html2js/bin:ng-html2js) %s %s %s %s $(SRCS) > $@" % (strip_prefix, prepend_prefix, module_name, goog_provide),
         tools = [
-            "@npm_html2js//:ng-html2js_bin",
-            "@npm_html2js//:_all_",
+            "@npm//ng-html2js/bin:ng-html2js",
             "//common:ng_template",
         ],
     )
@@ -29,4 +28,7 @@ def ng_template_bundle(
         srcs = [name + "_genrule"],
         # Include the .ng files as data dependencies so binaries can serve them.
         data = srcs,
+        suppress = [
+            "JSC_VAR_MULTIPLY_DECLARED_ERROR",
+        ],
     )

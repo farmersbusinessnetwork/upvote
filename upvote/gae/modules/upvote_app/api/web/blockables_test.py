@@ -71,7 +71,7 @@ class BlockableQueryHandlerTest(BlockablesTest):
 
     self.assertIn('application/json', response.headers['Content-type'])
     self.assertIsInstance(output['content'], list)
-    self.assertEqual(len(output['content']), 5)
+    self.assertLen(output['content'], 5)
 
   def testAdminGetListWithPlatform(self):
     """Admin getting list of all blockables on a specific platform."""
@@ -82,7 +82,7 @@ class BlockableQueryHandlerTest(BlockablesTest):
 
     self.assertIn('application/json', response.headers['Content-type'])
     self.assertIsInstance(output['content'], list)
-    self.assertEqual(len(output['content']), 1)
+    self.assertLen(output['content'], 1)
 
   def testUserGetBlockableList(self):
     """Normal user getting a list of all blockables."""
@@ -149,7 +149,7 @@ class BlockableQueryHandlerTest(BlockablesTest):
     # this user.
     self.assertIn('application/json', response.headers['Content-type'])
     self.assertIsInstance(output['content'], list)
-    self.assertEqual(len(output['content']), 2)
+    self.assertLen(output['content'], 2)
 
   def testUserGetOwnBlockables_UserHasNoBlockables(self):
     params = {'filter': 'own'}
@@ -159,7 +159,7 @@ class BlockableQueryHandlerTest(BlockablesTest):
 
     self.assertIn('application/json', response.headers['Content-type'])
     self.assertIsInstance(output['content'], list)
-    self.assertEqual(len(output['content']), 0)
+    self.assertLen(output['content'], 0)
 
   def testAdminGetListOfFlaggedBlockables(self):
     """Admin getting a list of flagged blockables."""
@@ -172,7 +172,7 @@ class BlockableQueryHandlerTest(BlockablesTest):
 
     self.assertIn('application/json', response.headers['Content-type'])
     self.assertIsInstance(output['content'], list)
-    self.assertEqual(len(output['content']), 1)
+    self.assertLen(output['content'], 1)
 
   def testAdminGetListOfSuspectBlockables(self):
     """Admin getting a list of flagged blockables."""
@@ -185,7 +185,7 @@ class BlockableQueryHandlerTest(BlockablesTest):
 
     self.assertIn('application/json', response.headers['Content-type'])
     self.assertIsInstance(output['content'], list)
-    self.assertEqual(len(output['content']), 1)
+    self.assertLen(output['content'], 1)
 
   def testAdminGetQueryByFileName(self):
     """Admin searching for a blockable by filename."""
@@ -198,7 +198,7 @@ class BlockableQueryHandlerTest(BlockablesTest):
     self.assertIn('application/json', response.headers['Content-type'])
     self.assertTrue(isinstance(output, dict))
     self.assertTrue(isinstance(output['content'], list))
-    self.assertEqual(len(output['content']), 1)
+    self.assertLen(output['content'], 1)
 
   def testAdminGetQueryByPublisher(self):
     """Admin searching for a blockable by filename."""
@@ -211,7 +211,7 @@ class BlockableQueryHandlerTest(BlockablesTest):
     self.assertIn('application/json', response.headers['Content-type'])
     self.assertTrue(isinstance(output, dict))
     self.assertTrue(isinstance(output['content'], list))
-    self.assertEqual(len(output['content']), 1)
+    self.assertLen(output['content'], 1)
 
   def testAdminGetQueryByProductName(self):
     """Admin searching for a blockable by filename."""
@@ -224,7 +224,7 @@ class BlockableQueryHandlerTest(BlockablesTest):
     self.assertIn('application/json', response.headers['Content-type'])
     self.assertTrue(isinstance(output, dict))
     self.assertTrue(isinstance(output['content'], list))
-    self.assertEqual(len(output['content']), 1)
+    self.assertLen(output['content'], 1)
 
   def testAdminGetQueryPlatform(self):
     """Admin searching for a blockable by platform."""
@@ -237,7 +237,7 @@ class BlockableQueryHandlerTest(BlockablesTest):
     self.assertIn('application/json', response.headers['Content-type'])
     self.assertTrue(isinstance(output, dict))
     self.assertTrue(isinstance(output['content'], list))
-    self.assertEqual(len(output['content']), 1)
+    self.assertLen(output['content'], 1)
 
   def testAdminGetQueryByUnknown(self):
     """Admin searching for a blockable by an unknown property."""
@@ -377,7 +377,7 @@ class BlockableHandlerTest(BlockablesTest):
     # Verify the FIRST_SEEN row in BigQuery.
     predicate = lambda c: c[1].get('action') == 'FIRST_SEEN'
     calls = self.GetBigQueryCalls(predicate=predicate)
-    self.assertEqual(1, len(calls))
+    self.assertLen(calls, 1)
 
   def testPost_Admin_InsertNote(self):
     """Admin posting a valid blockable."""
@@ -405,7 +405,7 @@ class BlockableHandlerTest(BlockablesTest):
     # Verify the FIRST_SEEN row in BigQuery.
     predicate = lambda c: c[1].get('action') == 'FIRST_SEEN'
     calls = self.GetBigQueryCalls(predicate=predicate)
-    self.assertEqual(1, len(calls))
+    self.assertLen(calls, 1)
 
   def testPost_Admin_Recount_Success(self):
     """Admin requesting a recount for a blockable."""
@@ -456,8 +456,8 @@ class BlockableHandlerTest(BlockablesTest):
 
   @mock.patch.object(
       blockables.voting_api, 'Recount',
-      side_effect=voting_api.BlockableNotFound)
-  def testPost_Admin_Recount_BlockableNotFound(self, mock_recount):
+      side_effect=voting_api.BlockableNotFoundError)
+  def testPost_Admin_Recount_BlockableNotFoundError(self, mock_recount):
     with self.LoggedInUser(admin=True):
       self.testapp.post(
           self.ROUTE % test_utils.RandomSHA256(),
@@ -466,8 +466,8 @@ class BlockableHandlerTest(BlockablesTest):
 
   @mock.patch.object(
       blockables.voting_api, 'Recount',
-      side_effect=voting_api.UnsupportedPlatform)
-  def testPost_Admin_Recount_UnsupportedPlatform(self, mock_recount):
+      side_effect=voting_api.UnsupportedPlatformError)
+  def testPost_Admin_Recount_UnsupportedPlatformError(self, mock_recount):
     with self.LoggedInUser(admin=True):
       self.testapp.post(
           self.ROUTE % test_utils.RandomSHA256(),
@@ -508,8 +508,9 @@ class BlockableHandlerTest(BlockablesTest):
       self.assertEqual(2, mock_reset.call_count)
 
   @mock.patch.object(
-      blockables.voting_api, 'Reset', side_effect=voting_api.BlockableNotFound)
-  def testPost_Admin_Reset_BlockableNotFound(self, mock_reset):
+      blockables.voting_api, 'Reset',
+      side_effect=voting_api.BlockableNotFoundError)
+  def testPost_Admin_Reset_BlockableNotFoundError(self, mock_reset):
     with self.LoggedInUser(admin=True):
       self.testapp.post(
           self.ROUTE % test_utils.RandomSHA256(),
@@ -518,8 +519,8 @@ class BlockableHandlerTest(BlockablesTest):
 
   @mock.patch.object(
       blockables.voting_api, 'Reset',
-      side_effect=voting_api.UnsupportedPlatform)
-  def testPost_Admin_Reset_UnsupportedPlatform(self, mock_reset):
+      side_effect=voting_api.UnsupportedPlatformError)
+  def testPost_Admin_Reset_UnsupportedPlatformError(self, mock_reset):
     with self.LoggedInUser(admin=True):
       self.testapp.post(
           self.ROUTE % test_utils.RandomSHA256(),
@@ -528,8 +529,8 @@ class BlockableHandlerTest(BlockablesTest):
 
   @mock.patch.object(
       blockables.voting_api, 'Reset',
-      side_effect=voting_api.OperationNotAllowed)
-  def testPost_Admin_Reset_OperationNotAllowed(self, mock_reset):
+      side_effect=voting_api.OperationNotAllowedError)
+  def testPost_Admin_Reset_OperationNotAllowedError(self, mock_reset):
     with self.LoggedInUser(admin=True):
       self.testapp.post(
           self.ROUTE % test_utils.RandomSHA256(),
@@ -586,7 +587,7 @@ class AuthorizedHostCountHandlerTest(BlockablesTest):
 
       self.assertEqual(expected, output)
 
-  def testGet_BlockableNotFound(self):
+  def testGet_BlockableNotFoundError(self):
     with self.LoggedInUser(admin=True):
       self.testapp.get(
           self.ROUTE % 'NoteARealBlockable', status=httplib.NOT_FOUND)
@@ -635,7 +636,7 @@ class UniqueEventCountHandlerTest(BlockablesTest):
 
     self.assertEqual(1, output)
 
-  def testGet_BlockableNotFound(self):
+  def testGet_BlockableNotFoundError(self):
     self.santa_blockable.key.delete()
     with self.LoggedInUser():
       self.testapp.get(

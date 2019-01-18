@@ -1,33 +1,26 @@
+load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository", "new_git_repository")
+
 git_repository(
     name = "io_bazel_rules_appengine",
+    commit = "549c7dd115fd172ec1a8d2220fe2d7d0d7610612",
     remote = "https://github.com/bazelbuild/rules_appengine.git",
-    # Check https://github.com/bazelbuild/rules_appengine/releases for the latest version.
-    #tag = "0.0.8",
-    # We need this fix: https://github.com/bazelbuild/rules_appengine/commit/8122a7086c101d57f940ffe7075e635d7f787b70#diff-6c4ba9456a113bcff5caecf8bffd5833R26
-    commit = "ee5eec25f22782e03c5abda88f2c946e88d776f3",
 )
 
-load(
-    "@io_bazel_rules_appengine//appengine:sdk.bzl",
-    "appengine_repositories",
-)
+load("@io_bazel_rules_appengine//appengine:py_appengine.bzl", "py_appengine_repositories")
+load("@io_bazel_rules_appengine//appengine:sdk.bzl", "appengine_repositories")
 
 appengine_repositories()
 
-
-load(
-    "@io_bazel_rules_appengine//appengine:py_appengine.bzl",
-    "py_appengine_repositories",
-)
-
 # Available from: https://storage.googleapis.com/appengine-sdks/featured/google_appengine_{version}.zip
+# Default for rules_appengine:549c7dd115fd172ec1a8d2220fe2d7d0d7610612 = 1.9.69
 py_appengine_repositories(
     version = '1.9.78',
     sha256 = 'fc37637530705260102d6acb03f5086290093394a07c51706c37da5254ce215b',
 )
 
 # needed for mock, webtest
-new_http_archive(
+http_archive(
     name = "six_archive",
     build_file = "//third_party:six.BUILD",
     sha256 = "105f8d68616f8248e24bf0e9372ef04d3cc10104f1980f54d57b2ce73a5ad56a",
@@ -43,7 +36,7 @@ bind(
     actual = "@six_archive//:six",
 )
 
-new_http_archive(
+http_archive(
     name = "mock_archive",
     build_file = "//third_party:mock.BUILD",
     sha256 = "b839dd2d9c117c701430c149956918a423a9863b48b09c90e30a6013e7d2f44f",
@@ -61,11 +54,11 @@ bind(
 
 bind(
     name = "webob",
-    actual = "@com_google_appengine_python//:webob-latest",
+    actual = "@com_google_appengine_py//:webob-latest",
 )
 
 # needed for webtest
-new_http_archive(
+http_archive(
     name = "waitress_archive",
     build_file = "//third_party:waitress.BUILD",
     sha256 = "c74fa1b92cb183d5a3684210b1bf0a0845fe8eb378fa816f17199111bbf7865f",
@@ -82,7 +75,7 @@ bind(
 )
 
 # needed for webtest
-new_http_archive(
+http_archive(
     name = "beautifulsoup4_archive",
     build_file = "//third_party:beautifulsoup4.BUILD",
     sha256 = "b21ca09366fa596043578fd4188b052b46634d22059e68dd0077d9ee77e08a3e",
@@ -98,7 +91,7 @@ bind(
     actual = "@beautifulsoup4_archive//:beautifulsoup4",
 )
 
-new_http_archive(
+http_archive(
     name = "webtest_archive",
     build_file = "//third_party:webtest.BUILD",
     sha256 = "2b6abd2689f28a0b3575bcb5a36757f2344670dd13a8d9272d3a987c2fd1b615",
@@ -157,7 +150,7 @@ bind(
 )
 
 # needed for googleapiclient
-new_http_archive(
+http_archive(
     name = "uritemplate_archive",
     build_file = "//third_party:uritemplate.BUILD",
     sha256 = "c02643cebe23fc8adb5e6becffe201185bf06c40bda5c0b4028a93f1527d011d",
@@ -251,7 +244,7 @@ bind(
 )
 
 # needed for gcloud_core, oauth2client
-new_http_archive(
+http_archive(
     name = "httplib2_archive",
     build_file = "//third_party:httplib2.BUILD",
     sha256 = "c3aba1c9539711551f4d83e857b316b5134a1c4ddce98a875b7027be7dd6d988",
@@ -268,7 +261,7 @@ bind(
 )
 
 # needed for gcloud_core
-new_http_archive(
+http_archive(
     name = "gapi_protos_http",
     build_file = "//third_party:gapi_protos.BUILD",
     sha256 = "c075eddaa2628ab519e01b7d75b76e66c40eaa50fc52758d8225f84708950ef2",
@@ -284,8 +277,8 @@ bind(
     actual = "@gapi_protos_http//:gapi_protos",
 )
 
-# needed for google-api-core for  gcloud_core
-new_http_archive(
+# needed for google-api-core for gcloud_core
+http_archive(
     name = "protobuf_archive",
     build_file = "//third_party:protobuf.BUILD",
     sha256 = "1489b376b0f364bcc6f89519718c057eb191d7ad6f1b395ffd93d1aa45587811",
@@ -316,7 +309,7 @@ bind(
 
 # needed for gcloud_api_core
 
-new_http_archive(
+http_archive(
     name = "futures_archive",
     build_file = "//third_party:futures.BUILD",
     sha256 = "9ec02aa7d674acb8618afb127e27fde7fc68994c0437ad759fa094a574adb265",
@@ -331,7 +324,7 @@ bind(
     actual = "@futures_archive//:futures",
 )
 
-new_http_archive(
+http_archive(
     name = "pytz_archive",
     build_file = "//third_party:pytz.BUILD",
     sha256 = "ffb9ef1de172603304d9d2819af6f5ece76f2e85ec10692a524dd876e72bf277",
@@ -347,7 +340,7 @@ bind(
 )
 
 # needed for gcloud_core
-new_http_archive(
+http_archive(
     name = "gcloud_api_core_archive",
     build_file = "//third_party:gcloud_api_core.BUILD",
     sha256 = "a9ae625afd0ea5a4618604675d1fc140998c9c2b17f1d91817a7a7f5b33f7484",
@@ -363,7 +356,7 @@ bind(
 )
 
 # needed for gcloud_bigquery
-new_http_archive(
+http_archive(
     name = "gcloud_core_archive",
     build_file = "//third_party:gcloud_core.BUILD",
     sha256 = "89e8140a288acec20c5e56159461d3afa4073570c9758c05d4e6cb7f2f8cc440",
@@ -393,7 +386,7 @@ bind(
 )
 
 # NOTE: workaround for pkg_resources import issue with gcloud_bigquery.
-new_http_archive(
+http_archive(
     name = "setuptools_archive",
     build_file = "//third_party:setuptools.BUILD",
     sha256 = "47881d54ede4da9c15273bac65f9340f8929d4f0213193fa7894be384f2dcfa6",
@@ -448,8 +441,8 @@ bind(
     actual = "@gcloud_auth_git//:gcloud_auth",
 )
 
-# google-cloud-bigquery
-new_http_archive(
+# needed for google-cloud-bigquery
+http_archive(
     name = "gcloud_bigquery_archive",
     build_file = "//third_party:gcloud_bigquery.BUILD",
     sha256 = "aed2b1d4db1e21d891522d6d6bb14476e6ba58c681cbb68eeb42c168a4e3fda9",
@@ -467,7 +460,7 @@ bind(
 
 # google-cloud-monitoring
 # unfortunately the latest monitoring relies on grpcio, which is really complicated to support via bazel: https://github.com/grpc/grpc/commit/e1210f78f82b2c9e4ae9f59463322209d45d5354
-new_http_archive(
+http_archive(
     name = "gcloud_monitoring_archive",
     build_file = "//third_party:gcloud_monitoring.BUILD",
     sha256 = "534d66d97611c9c6e08823532f5144f6786d3a6103a6d5ed6411ac465faa5341",
@@ -482,7 +475,6 @@ bind(
     name = "gcloud_monitoring",
     actual = "@gcloud_monitoring_archive//:gcloud_monitoring",
 )
-
 
 new_http_archive(
     name = "requests_toolbelt_archive",
@@ -501,10 +493,10 @@ bind(
 
 http_archive(
     name = "io_bazel_rules_closure",
-    sha256 = "f91ec43ce3898c6b965e2bdff91a53755a13004adbeaf606804f719f1e888340",
-    strip_prefix = "rules_closure-3555e5ba61fdcc17157dd833eaf7d19b313b1bca",
+    sha256 = "e3a384a34ab7f54f3b2e65d6c9b015aed665bab3ee265396f3876f0c53729525",
+    strip_prefix = "rules_closure-7448ab3b1f53db99419a2b1a1b84f9ba2d79ec03",
     urls = [
-        "https://github.com/bazelbuild/rules_closure/archive/3555e5ba61fdcc17157dd833eaf7d19b313b1bca.tar.gz",  # 2018-07-23
+        "https://github.com/bazelbuild/rules_closure/archive/7448ab3b1f53db99419a2b1a1b84f9ba2d79ec03.tar.gz",  # 2018-11-15
     ],
 )
 
@@ -512,25 +504,22 @@ load("@io_bazel_rules_closure//closure:defs.bzl", "closure_repositories")
 
 closure_repositories()
 
-http_archive(
-    name = "org_pubref_rules_node",
-    sha256 = "d161dd6551c1061ee954fd6ec014a671d932728776f55a6dcb6ac8ddd5cb5354",
-    strip_prefix = "rules_node-993a258096aaf3d4b295c18856e3405011cad99c",
-    urls = [
-        "http://mirror.bazel.build/github.com/pubref/rules_node/archive/993a258096aaf3d4b295c18856e3405011cad99c.tar.gz",
-        "https://github.com/pubref/rules_node/archive/993a258096aaf3d4b295c18856e3405011cad99c.tar.gz",
-    ],
+git_repository(
+    name = "build_bazel_rules_nodejs",
+    remote = "https://github.com/bazelbuild/rules_nodejs.git",
+    tag = "0.16.3",  # 2018-12-11
 )
 
-load("@org_pubref_rules_node//node:rules.bzl", "node_repositories", "yarn_modules")
+load("@build_bazel_rules_nodejs//:package.bzl", "rules_nodejs_dependencies")
+rules_nodejs_dependencies()
 
-node_repositories()
+load("@build_bazel_rules_nodejs//:defs.bzl", "node_repositories")
 
-yarn_modules(
-    name = "npm_html2js",
-    deps = {
-        "ng-html2js": "3.0.0",
-    },
+node_repositories(package_json = ["//:package.json"])
+load("@build_bazel_rules_nodejs//:defs.bzl", "npm_install")
+npm_install(
+    name = "npm",
+    package_json = "//:package.json",
 )
 
 new_git_repository(

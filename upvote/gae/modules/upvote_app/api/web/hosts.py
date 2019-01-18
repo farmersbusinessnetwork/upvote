@@ -23,30 +23,27 @@ from webapp2_extras import routes
 from google.appengine.ext import ndb
 
 from upvote.gae.bigquery import tables
-from upvote.gae.datastore.models import base as base_models
-from upvote.gae.datastore.models import bit9 as bit9_models
 from upvote.gae.datastore.models import exemption as exemption_models
-from upvote.gae.datastore.models import santa as santa_models
+from upvote.gae.datastore.models import host as host_models
 from upvote.gae.datastore.models import tickets as tickets_models
 from upvote.gae.datastore.models import user as user_models
 from upvote.gae.datastore.models import utils as model_utils
-from upvote.gae.modules.upvote_app.api.web import base
 from upvote.gae.modules.upvote_app.api.web import monitoring
 from upvote.gae.utils import handler_utils
 from upvote.gae.utils import xsrf_utils
 from upvote.shared import constants
 
 
-class HostQueryHandler(base.BaseQueryHandler):
+class HostQueryHandler(handler_utils.UserFacingQueryHandler):
   """Handler for querying hosts."""
 
-  MODEL_CLASS = base_models.Host
+  MODEL_CLASS = host_models.Host
 
   @property
   def RequestCounter(self):
     return monitoring.host_requests
 
-  @base.RequireCapability(constants.PERMISSIONS.VIEW_OTHER_HOSTS)
+  @handler_utils.RequireCapability(constants.PERMISSIONS.VIEW_OTHER_HOSTS)
   @handler_utils.RecordRequest
   def get(self):
     self._Query()
@@ -55,29 +52,29 @@ class HostQueryHandler(base.BaseQueryHandler):
 class SantaHostQueryHandler(HostQueryHandler):
   """Handler for querying santa hosts."""
 
-  MODEL_CLASS = santa_models.SantaHost
+  MODEL_CLASS = host_models.SantaHost
 
 
-class HostHandler(base.BaseHandler):
+class HostHandler(handler_utils.UserFacingHandler):
   """Handler for interacting with specific hosts."""
 
   def get(self, host_id):
-    host_id = base_models.Host.NormalizeId(host_id)
+    host_id = host_models.Host.NormalizeId(host_id)
     logging.info('Host handler get method called with ID=%s.', host_id)
-    host = base_models.Host.get_by_id(host_id)
+    host = host_models.Host.get_by_id(host_id)
     if host is None:
       self.abort(httplib.NOT_FOUND, explanation='Host not found')
-    elif not host.IsAssociatedWithUser(self.user):
+    elif not model_utils.IsHostAssociatedWithUser(host, self.user):
       self.RequireCapability(constants.PERMISSIONS.VIEW_OTHER_HOSTS)
     self.respond_json(host)
 
-  @base.RequireCapability(constants.PERMISSIONS.EDIT_HOSTS)
+  @handler_utils.RequireCapability(constants.PERMISSIONS.EDIT_HOSTS)
   @xsrf_utils.RequireToken
   def post(self, host_id):
-    host_id = base_models.Host.NormalizeId(host_id)
+    host_id = host_models.Host.NormalizeId(host_id)
     logging.info('Host handler post method called with ID=%s.', host_id)
 
-    host = base_models.Host.get_by_id(host_id)
+    host = host_models.Host.get_by_id(host_id)
     if host is None:
       self.abort(httplib.NOT_FOUND, explanation='Host not found')
 
@@ -103,7 +100,7 @@ class HostHandler(base.BaseHandler):
     self.respond_json(host)
 
 
-class AssociatedHostHandler(base.BaseHandler):
+class AssociatedHostHandler(handler_utils.UserFacingHandler):
   """Handler for interacting with specific hosts."""
 
   def _GetAssociatedHosts(self, user):
@@ -116,14 +113,14 @@ class AssociatedHostHandler(base.BaseHandler):
     epoch = datetime.datetime.utcfromtimestamp(0)
 
     def ByFreshness(host):
-      if isinstance(host, bit9_models.Bit9Host):
+      if isinstance(host, host_models.Bit9Host):
         return host.last_event_dt or epoch
-      elif isinstance(host, santa_models.SantaHost):
+      elif isinstance(host, host_models.SantaHost):
         return host.rule_sync_dt or epoch
 
     return sorted(hosts, key=ByFreshness, reverse=True)
 
-  @base.RequireCapability(constants.PERMISSIONS.VIEW_OTHER_HOSTS)
+  @handler_utils.RequireCapability(constants.PERMISSIONS.VIEW_OTHER_HOSTS)
   def GetByUserId(self, user_id):
     logging.info('Getting associated Hosts for user_id=%s', user_id)
     user = user_models.User.GetById(user_id)
@@ -139,21 +136,21 @@ class AssociatedHostHandler(base.BaseHandler):
     self.respond_json(hosts)
 
 
-class HostExceptionHandler(base.BaseHandler):
+class HostExceptionHandler(handler_utils.UserFacingHandler):
   """Handler for interacting with host exceptions."""
 
   def get(self, host_id):
-    host_id = base_models.Host.NormalizeId(host_id)
+    host_id = host_models.Host.NormalizeId(host_id)
     logging.info('Host exception handler GET called with ID=%s.', host_id)
 
-    host = base_models.Host.get_by_id(host_id)
+    host = host_models.Host.get_by_id(host_id)
     if host is None:
       self.abort(httplib.NOT_FOUND, explanation='Host not found')
 
     # This request should only be available to admins or users who have (at
     # least at one time) had control of the host.
     if (not self.user.is_admin and
-        not host.IsAssociatedWithUser(self.user)):
+        not model_utils.IsHostAssociatedWithUser(host, self.user)):
       logging.warning(
           'Host exception for ID=%s queried by unauthorized user=%s.',
           host_id, self.user.email)
@@ -177,19 +174,20 @@ class HostExceptionHandler(base.BaseHandler):
 
     self.respond_json(ticket)
 
-  @base.RequireCapability(constants.PERMISSIONS.REQUEST_EXEMPTION)
+  @handler_utils.RequireCapability(constants.PERMISSIONS.REQUEST_EXEMPTION)
   @xsrf_utils.RequireToken
   def post(self, host_id):
-    host_id = base_models.Host.NormalizeId(host_id)
+    host_id = host_models.Host.NormalizeId(host_id)
     logging.info('Host exception handler POST called with ID=%s.', host_id)
 
-    host = base_models.Host.get_by_id(host_id)
+    host = host_models.Host.get_by_id(host_id)
     if host is None:
       self.abort(httplib.NOT_FOUND, explanation='Host not found')
 
     # This request should only be available to admins or users who have (at
     # least at one time) had control of the host.
-    if not (self.user.is_admin or host.IsAssociatedWithUser(self.user)):
+    if not (self.user.is_admin or
+            model_utils.IsHostAssociatedWithUser(host, self.user)):
       logging.error(
           'Host exception for ID=%s requested by unauthorized user=%s.',
           host_id, self.user.email)
@@ -234,27 +232,28 @@ class HostExceptionHandler(base.BaseHandler):
         action=constants.HOST_ACTION.MODE_CHANGE,
         hostname=host.hostname,
         platform=constants.PLATFORM.MACOS,
-        users=santa_models.SantaHost.GetAssociatedUsers(host_id),
+        users=model_utils.GetUsersAssociatedWithSantaHost(host_id),
         mode=host.client_mode)
 
     self.respond_json(host)
 
 
-class LockdownHandler(base.BaseHandler):
+class LockdownHandler(handler_utils.UserFacingHandler):
   """Handler for enrolling a host in Lockdown."""
 
   @xsrf_utils.RequireToken
   def post(self, host_id):
-    host_id = base_models.Host.NormalizeId(host_id)
+    host_id = host_models.Host.NormalizeId(host_id)
     logging.info('Lockdown handler POST called with ID=%s.', host_id)
 
-    host = base_models.Host.get_by_id(host_id)
+    host = host_models.Host.get_by_id(host_id)
     if host is None:
       self.abort(httplib.NOT_FOUND, explanation='Host not found')
 
     # This request should only be available to admins or users who have (at
     # least at one time) had control of the host.
-    if not (self.user.is_admin or host.IsAssociatedWithUser(self.user)):
+    if not (self.user.is_admin or
+            model_utils.IsHostAssociatedWithUser(host, self.user)):
       logging.error(
           'Lockdown for ID=%s requested by unauthorized user=%s.',
           host_id, self.user.email)
@@ -272,24 +271,24 @@ class LockdownHandler(base.BaseHandler):
         action=constants.HOST_ACTION.MODE_CHANGE,
         hostname=host.hostname,
         platform=constants.PLATFORM.MACOS,
-        users=santa_models.SantaHost.GetAssociatedUsers(host_id),
+        users=model_utils.GetUsersAssociatedWithSantaHost(host_id),
         mode=host.client_mode)
 
     self.respond_json(host)
 
 
-class VisibilityHandler(base.BaseHandler):
+class VisibilityHandler(handler_utils.UserFacingHandler):
   """Handler for changing the hidden attribute of a host."""
 
   @xsrf_utils.RequireToken
   def put(self, host_id, hidden):
-    host_id = base_models.Host.NormalizeId(host_id)
+    host_id = host_models.Host.NormalizeId(host_id)
 
-    host = base_models.Host.get_by_id(host_id)
+    host = host_models.Host.get_by_id(host_id)
     if not host:
       self.abort(httplib.NOT_FOUND, explanation='Host %s not found' % host_id)
 
-    if not host.IsAssociatedWithUser(self.user):
+    if not model_utils.IsHostAssociatedWithUser(host, self.user):
       self.abort(
           httplib.FORBIDDEN,
           explanation='Host %s not associated with user %s' % (

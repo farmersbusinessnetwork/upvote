@@ -13,13 +13,11 @@ py_library(
     name = "all",
     deps = [
         ":alerts",
-        ":base",
         ":blockables",
-        ":constants",
         ":emergency",
         ":events",
         ":hosts",
-        ":index_handler",
+        ":index",
         ":lookups",
         ":rules",
         ":settings",
@@ -32,7 +30,6 @@ py_library(
     name = "alerts",
     srcs = ["alerts.py"],
     deps = [
-        ":base",
         ":monitoring",
         "//upvote/gae/datastore/models:alert",
         "//upvote/gae/utils:handler_utils",
@@ -45,7 +42,6 @@ py_library(
     name = "blockables",
     srcs = ["blockables.py"],
     deps = [
-        ":base",
         ":monitoring",
         "//upvote/gae/bigquery:tables",
         "//upvote/gae/datastore/models:base",
@@ -60,23 +56,12 @@ py_library(
 )
 
 py_library(
-    name = "constants",
-    srcs = ["constants.py"],
-    deps = [
-        ":base",
-        ":monitoring",
-        "//upvote/gae/utils:handler_utils",
-        "//upvote/shared:constants",
-    ],
-)
-
-py_library(
     name = "emergency",
     srcs = ["emergency.py"],
     deps = [
-        ":base",
         "//upvote/gae/datastore/models:cache",
         "//upvote/gae/shared/common:big_red",
+        "//upvote/gae/utils:handler_utils",
         "//upvote/gae/utils:xsrf_utils",
         "//upvote/shared:constants",
     ],
@@ -86,10 +71,10 @@ py_library(
     name = "events",
     srcs = ["events.py"],
     deps = [
-        ":base",
         ":monitoring",
         "//upvote/gae/datastore/models:base",
         "//upvote/gae/datastore/models:bit9",
+        "//upvote/gae/datastore/models:host",
         "//upvote/gae/datastore/models:santa",
         "//upvote/gae/datastore/models:vote",
         "//upvote/gae/shared/common:user_map",
@@ -102,12 +87,10 @@ py_library(
     name = "hosts",
     srcs = ["hosts.py"],
     deps = [
-        ":base",
         ":monitoring",
         "//upvote/gae/bigquery:tables",
-        "//upvote/gae/datastore/models:base",
         "//upvote/gae/datastore/models:exemption",
-        "//upvote/gae/datastore/models:santa",
+        "//upvote/gae/datastore/models:host",
         "//upvote/gae/datastore/models:tickets",
         "//upvote/gae/datastore/models:utils",
         "//upvote/gae/utils:handler_utils",
@@ -119,7 +102,6 @@ py_library(
     name = "lookups",
     srcs = ["lookups.py"],
     deps = [
-        ":base",
         ":monitoring",
         "//upvote/gae/datastore/models:base",
         "//upvote/gae/datastore/models:bit9",
@@ -133,7 +115,6 @@ py_library(
     name = "rules",
     srcs = ["rules.py"],
     deps = [
-        ":base",
         ":monitoring",
         "//upvote/gae/datastore/models:base",
         "//upvote/gae/datastore/models:santa",
@@ -146,11 +127,10 @@ py_library(
     name = "settings",
     srcs = ["settings.py"],
     deps = [
-        ":base",
         ":monitoring",
+        "//upvote/gae:settings",
         "//upvote/gae/datastore/models:virustotal",
         "//upvote/gae/datastore/models:datadog",
-        "//upvote/gae/shared/common:settings",
         "//upvote/gae/utils:handler_utils",
         "//upvote/gae/utils:string_utils",
         "//upvote/gae/utils:xsrf_utils",
@@ -162,7 +142,6 @@ py_library(
     name = "users",
     srcs = ["users.py"],
     deps = [
-        ":base",
         ":monitoring",
         "//upvote/gae/datastore/models:user",
         "//upvote/gae/shared/common:user_map",
@@ -176,7 +155,6 @@ py_library(
     name = "votes",
     srcs = ["votes.py"],
     deps = [
-        ":base",
         ":monitoring",
         "//upvote/gae/datastore:utils",
         "//upvote/gae/datastore/models:base",
@@ -197,31 +175,19 @@ py_appengine_library(
     deps = [
         ":all",
         ":monitoring",
-        "//upvote/gae/shared/common:settings",
+        "//upvote/gae:settings",
         "//upvote/gae/utils:handler_utils",
     ],
 )
 
 py_appengine_library(
-    name = "base",
-    srcs = ["base.py"],
-    deps = [
-        "//upvote/gae/datastore:utils",
-        "//upvote/gae/datastore/models:user",
-        "//upvote/gae/utils:env_utils",
-        "//upvote/gae/utils:handler_utils",
-        "//upvote/gae/utils:json_utils",
-        "//upvote/gae/utils:string_utils",
-    ],
-)
-
-py_appengine_library(
-    name = "index_handler",
-    srcs = ["index_handler.py"],
+    name = "index",
+    srcs = ["index.py"],
     deps = [
         "//upvote/gae/shared/common:template_utils",
         "//upvote/gae/utils:handler_utils",
         "//upvote/gae/utils:xsrf_utils",
+        "//upvote/shared:constants",
     ],
 )
 
@@ -242,24 +208,11 @@ py_appengine_library(
 # ==============================================================================
 
 upvote_appengine_test(
-    name = "base_test",
+    name = "index_test",
     size = "small",
-    srcs = ["base_test.py"],
+    srcs = ["index_test.py"],
     deps = [
-        ":base",
-        "//upvote/gae/datastore:test_utils",
-        "//upvote/gae/datastore/models:base",
-        "//upvote/gae/lib/testing:basetest",
-        "//upvote/shared:constants",
-    ],
-)
-
-upvote_appengine_test(
-    name = "index_handler_test",
-    size = "small",
-    srcs = ["index_handler_test.py"],
-    deps = [
-        ":index_handler",
+        ":index",
         "//external:mock",
         "//upvote/gae/lib/testing:basetest",
     ],
@@ -297,18 +250,6 @@ upvote_appengine_test(
 )
 
 upvote_appengine_test(
-    name = "constants_test",
-    size = "small",
-    srcs = ["constants_test.py"],
-    deps = [
-        ":constants",
-        "//external:mock",
-        "//upvote/gae/lib/testing:basetest",
-        "//upvote/shared:constants",
-    ],
-)
-
-upvote_appengine_test(
     name = "emergency_test",
     size = "small",
     srcs = ["emergency_test.py"],
@@ -341,10 +282,10 @@ upvote_appengine_test(
         "//external:mock",
         "//upvote/gae/datastore:test_utils",
         "//upvote/gae/datastore:utils",
-        "//upvote/gae/datastore/models:base",
         "//upvote/gae/datastore/models:exemption",
-        "//upvote/gae/datastore/models:santa",
+        "//upvote/gae/datastore/models:host",
         "//upvote/gae/datastore/models:tickets",
+        "//upvote/gae/datastore/models:utils",
         "//upvote/gae/lib/testing:basetest",
         "//upvote/gae/lib/testing:test_utils",
         "//upvote/gae/utils:xsrf_utils",
@@ -363,7 +304,7 @@ upvote_appengine_test(
         "//upvote/gae/datastore/models:base",
         "//upvote/gae/lib/analysis:api",
         "//upvote/gae/lib/testing:basetest",
-        "//upvote/gae/shared/common:settings_utils",
+        "//upvote/gae/utils:settings_utils",
         "//upvote/shared:constants",
     ],
 )
@@ -427,6 +368,7 @@ upvote_appengine_test(
         "//upvote/gae/datastore:test_utils",
         "//upvote/gae/datastore:utils",
         "//upvote/gae/datastore/models:base",
+        "//upvote/gae/datastore/models:user",
         "//upvote/gae/datastore/models:vote",
         "//upvote/gae/lib/testing:basetest",
     ],

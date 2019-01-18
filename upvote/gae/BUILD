@@ -2,7 +2,7 @@ package(default_visibility = ["//upvote"])
 
 load(
     "//upvote:builddefs.bzl",
-    "py_appengine_binary",
+    "upvote_appengine_binary",
     "py_appengine_library",
     "upvote_appengine_test",
 )
@@ -12,7 +12,7 @@ exports_files(glob(["*.yaml"]))
 # Binaries
 # ==============================================================================
 
-py_appengine_binary(
+upvote_appengine_binary(
     name = "monolith_binary",
     srcs = ["appengine_config.py"],
     configs = glob(["*.yaml"]) + [":appengine_config.py"],
@@ -25,7 +25,6 @@ py_appengine_binary(
         "//upvote/gae/modules/upvote_app:upvote_app_library",
         "//upvote/gae/shared:all",
     ],
-    overwrite_appengine_config = False,
 )
 
 # MPMs
@@ -38,8 +37,18 @@ py_appengine_library(
     name = "appengine_config",
     srcs = ["appengine_config.py"],
     deps = [
+        ":settings",
         "//upvote/gae/datastore/models:rule",
-        "//upvote/gae/shared/common:settings",
+    ],
+)
+
+py_appengine_library(
+    name = "settings",
+    srcs = ["settings.py"],
+    deps = [
+        "//common:context",
+        "//upvote/gae/utils:settings_utils",
+        "//upvote/shared:constants",
     ],
 )
 
@@ -52,8 +61,8 @@ upvote_appengine_test(
     srcs = ["appengine_config_test.py"],
     deps = [
         ":appengine_config",
+        ":settings",
         "//upvote/gae/lib/testing:basetest",
-        "//upvote/gae/shared/common:settings",
         "//upvote/shared:constants",
     ],
 )

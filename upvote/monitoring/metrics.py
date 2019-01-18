@@ -53,6 +53,11 @@ class UpvoteNamespace(Namespace):
     super(UpvoteNamespace, self).__init__(UPVOTE + prefix, tuples)
 
 
+DATASTORE = UpvoteNamespace('datastore/', [
+    ('backups', 'Datastore Backups'),
+])
+
+
 SANTA_API = UpvoteNamespace('santa_api/', [
     ('preflight_requests', 'Preflight Requests'),
     ('event_upload_requests', 'Event Upload Requests'),
@@ -73,7 +78,6 @@ BIT9_API = UpvoteNamespace('bit9_api/', [
     ('bit9_qps', 'Bit9 QPS'),
     ('bit9_requests', 'Bit9 Requests'),
     ('bit9_latency', 'Bit9 Latency'),
-    ('local_whitelisting_latency', 'Local Whitelisting Latency'),
     ('file_instances_missing', 'File Instances Missing')])
 
 
@@ -85,7 +89,6 @@ BIT9_REST_API = UpvoteNamespace('bit9_rest_api/', [
 
 UPVOTE_APP = UpvoteNamespace('upvote_app/', [
     ('blockable_requests', 'Blockable Requested'),
-    ('constant_requests', 'Constant Requested'),
     ('event_requests', 'Event Requested'),
     ('host_requests', 'Host Requested'),
     ('lookup_requests', 'Lookup Requested'),
@@ -104,6 +107,9 @@ ANALYSIS = UpvoteNamespace('analysis/', [
 BIGQUERY = UpvoteNamespace('bigquery/', [
     ('row_insertions', 'Row Insertions')])
 
+
+EXEMPTION = UpvoteNamespace('exemption/', [
+    ('state_changes', 'State Changes')])
 
 RPC_SERVER = Namespace('/rpc/server/', [
     ('count', 'RPC Query Count'),

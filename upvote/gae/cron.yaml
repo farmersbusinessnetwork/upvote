@@ -40,17 +40,17 @@ cron:
 #~~~   url: /cron/roles/lock-it-down
 #~~~   schedule: every 1 hours
 #~~~   target: upvote-app
-#~~~ 
+#~~~
 #~~~ - description: Lock down all hosts not locked to monitor.
 #~~~   url: /cron/roles/lock-spider
 #~~~   schedule: every 1 hours
 #~~~   target: upvote-app
-#~~~ 
+#~~~
 #~~~ - description: Put all hosts of users in monitor group into monitor mode.
 #~~~   url: /cron/roles/monitor-it
 #~~~   schedule: every 1 hours
 #~~~   target: upvote-app
-#~~~ 
+#~~~
 #### END:santa ####
 #### BEGIN:bit9 ####
 # Cron jobs that drive Bit9 syncing.

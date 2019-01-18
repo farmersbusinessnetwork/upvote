@@ -19,9 +19,6 @@ else
     DEPLOY_PARAMS="$@"
 fi
 
-# https://github.com/bazelbuild/rules_appengine/issues/90#issuecomment-436089606
-export TMPDIR=${TMPDIR%/}
-
 # Instructions
 # To setup your environment to allow deploys, install google cloud sdk: https://cloud.google.com/sdk/docs/#install_the_latest_cloud_tools_version_cloudsdk_current_version
 # and run the following prior to running this script:
@@ -34,7 +31,7 @@ python3 "${DIR}/validate_certs.py"
 
 # NOTE: this change is critical, or else for some reason all hosts end up getting reset to LOCKDOWN mode in the database
 #        see https://github.com/google/upvote/issues/21
-if grep -q "SANTA_DEFAULT_CLIENT_MODE = constants.SANTA_CLIENT_MODE.MONITOR" "${ROOT}/upvote/gae/shared/common/settings.py"; then
+if grep -q "SANTA_DEFAULT_CLIENT_MODE = constants.SANTA_CLIENT_MODE.MONITOR" "${ROOT}/upvote/gae/settings.py"; then
     # TODO: we should run unittests before deploy, however several don't pass yet due to our changes
     # ${ROOT}/run_tests.sh
     # NOTE: first run needs to be done w/o anything after PROJ_ID
