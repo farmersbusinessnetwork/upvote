@@ -476,7 +476,7 @@ bind(
     actual = "@gcloud_monitoring_archive//:gcloud_monitoring",
 )
 
-new_http_archive(
+http_archive(
     name = "requests_toolbelt_archive",
     build_file = "//third_party:requests_toolbelt.BUILD",
     sha256 = "f6a531936c6fa4c6cfce1b9c10d5c4f498d16528d2a54a22ca00011205a187b5",
@@ -530,7 +530,7 @@ new_git_repository(
 )
 
 # FBN
-new_http_archive(
+http_archive(
     name = "datadog_archive",
     build_file = "//third_party:datadog.BUILD",
     sha256 = "86cef95acd73543d18c417f1b0313c0a7274ed8f5ae9cceb46314f4e588085b1",
