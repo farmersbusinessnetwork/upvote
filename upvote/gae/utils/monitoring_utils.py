@@ -16,12 +16,12 @@
 
 import functools
 import logging
-import datetime
+
+# import datetime
 
 # from google.appengine.api import modules
 # from google.cloud import monitoring
-
-from upvote.gae.shared.common import settings
+# from upvote.gae import settings
 
 from upvote.gae.datastore.models import datadog as datadog_model
 

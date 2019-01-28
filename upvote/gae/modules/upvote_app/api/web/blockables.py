@@ -106,7 +106,7 @@ def _GetBlockableContext(blockables):
   return events_with_context
 
 
-class BlockableQueryHandler(handler_utils.BaseQueryHandler):
+class BlockableQueryHandler(handler_utils.UserFacingQueryHandler):
   """Handlers for querying blockables."""
 
   # NOTE: Value will be dynamically set but must have a default to
@@ -249,7 +249,7 @@ class BlockableHandler(handler_utils.UserFacingHandler):
     self.respond_json(response_data)
 
   # TODO: should really be UPDATE_BLOCKABLES
-  @base.RequireCapability(constants.PERMISSIONS.INSERT_BLOCKABLES)
+  @handler_utils.RequireCapability(constants.PERMISSIONS.INSERT_BLOCKABLES)
   def _update_blockable(self, blockable):
     if isinstance(blockable, base_models.Binary):
       if self.request.get('isCompiler') is not None:
