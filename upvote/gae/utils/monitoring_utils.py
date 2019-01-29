@@ -18,7 +18,6 @@ import functools
 import logging
 
 # import datetime
-
 # from google.appengine.api import modules
 # from google.cloud import monitoring
 # from upvote.gae import settings

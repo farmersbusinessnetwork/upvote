@@ -62,6 +62,7 @@ SANTA_API = UpvoteNamespace('santa_api/', [
     ('preflight_requests', 'Preflight Requests'),
     ('event_upload_requests', 'Event Upload Requests'),
     ('rule_download_requests', 'Rule Download Requests'),
+    ('event_type_uploads', 'Event Type Uploads'),
     ('postflight_requests', 'Postflight Requests')])
 
 

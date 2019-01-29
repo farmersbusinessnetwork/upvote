@@ -29,3 +29,6 @@ rule_download_requests = monitoring_utils.RequestCounter(
 
 postflight_requests = monitoring_utils.RequestCounter(
     metrics.SANTA_API.POSTFLIGHT_REQUESTS)
+
+event_type_uploads = monitoring_utils.Counter(
+    metrics.SANTA_API.EVENT_TYPE_UPLOADS, fields=[(u'decision', str)])
