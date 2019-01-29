@@ -484,13 +484,6 @@ class EventUploadHandler(BaseSantaApiHandler):
     usernames = event.get(_EVENT_UPLOAD.LOGGED_IN_USERS, [])
 
     monitoring.event_type_uploads.Increment(dbevent.event_type)
-    logging.info(
-        'Inserting type %s for host %s user %s at %s with blockable %s',
-        dbevent.event_type,
-        dbevent.host_id,
-        dbevent.executing_user or 'UNKNOWN',
-        occurred_dt,
-        blockable_id)
 
     tables.EXECUTION.InsertRow(
         sha256=blockable_id,
