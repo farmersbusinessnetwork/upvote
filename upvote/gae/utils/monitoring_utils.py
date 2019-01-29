@@ -44,7 +44,7 @@ def _dd_get_stats():
     if not dd_api_instance:
       return None
 
-    datadog.initialize(dd_api_instance.api_key)
+    datadog.initialize(dd_api_instance.api_key, host_name='santaupvote.appspot.com')
 
     # we can't have background threads
     _dd_stats = datadog.ThreadStats()
