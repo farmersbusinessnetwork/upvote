@@ -89,7 +89,7 @@ class HostHandler(handler_utils.UserFacingHandler):
       host.transitive_whitelisting_enabled = (
           self.request.get('transitiveWhitelistingEnabled') == 'true')
 
-    if isinstance(host, santa_models.SantaHost):
+    if isinstance(host, host_models.SantaHost):
       if self.request.get('directoryWhitelistRegex'):
         host.directory_whitelist_regex = self.request.get('directoryWhitelistRegex')
       if self.request.get('directoryBlacklistRegex'):
