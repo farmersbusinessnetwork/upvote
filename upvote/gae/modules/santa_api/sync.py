@@ -512,7 +512,7 @@ class EventUploadHandler(BaseSantaApiHandler):
         mail.send_mail(sender='no-reply@santaupvote.appspotmail.com',
                        to="santa@farmersbusinessnetwork.com",
                        subject="New Santa Blocked event",
-                       body="""Application {0[file_name]} by publisher {0[publisher]} was blocked on host https://santaupvote.appspot.com/admin/events?hostId={0[host_id]}
+                       body="""Application {0[file_name]} by publisher {0[publisher]} was blocked for user {0[executing_user]} on this host: https://santaupvote.appspot.com/admin/events?hostId={0[host_id]}
 
 More details about the application being run can be found here:  https://santaupvote.appspot.com/admin/blockables/{0[blockable_id]}
 
