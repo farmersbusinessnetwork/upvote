@@ -508,13 +508,15 @@ class EventUploadHandler(BaseSantaApiHandler):
 
     for event in events:
       if event.event_type in constants.EVENT_TYPE.SET_BLOCKED_TYPES:
+        evt_dict = event.to_dict()
         mail.send_mail(sender='no-reply@santaupvote.appspotmail.com',
                        to="santa@farmersbusinessnetwork.com",
                        subject="New Santa Blocked event",
-                       body="""Blocked event: {}
-                       url: https://santaupvote.appspot.com/admin/events/{}
-        """.format(pprint.pformat(event.to_dict(), width=150),
-                   event.key.urlsafe()))
+                       body="""Application {0[file_name]} by publisher {0[publisher]} was blocked on host https://santaupvote.appspot.com/admin/events?hostId={0[host_id]}
+
+More details about the application being run can be found here:  https://santaupvote.appspot.com/admin/blockables/{0[blockable_id]}
+
+The block event can be viewed here: https://santaupvote.appspot.com/admin/events/{1}""".format(evt_dict, event.key.urlsafe()))
 
     return events
 
