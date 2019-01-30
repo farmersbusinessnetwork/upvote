@@ -512,7 +512,7 @@ class EventUploadHandler(BaseSantaApiHandler):
                        to="santa@farmersbusinessnetwork.com",
                        subject="New Santa Blocked event",
                        body="""Blocked event: {}
-                       url: http://https://santaupvote.appspot.com/admin/events/{}
+                       url: https://santaupvote.appspot.com/admin/events/{}
         """.format(pprint.pformat(event.to_dict(), width=150),
                    event.key.urlsafe()))
 
