@@ -150,23 +150,22 @@ upvote.admin.lib.controllers.ModelController = class {
       pathParts[3] = this.id || '';
     }
     let newUrl = pathParts.join('/');
-
     this.location.path(newUrl);
   }
 
   /**
    * Loads the selected record as a card.
    * @param {string} id The id of the selected item.
-   * @param {boolean} skipUpdateUrl set to true to skip an updateItemUrl call
+   * @param {boolean} skipNavigateToUrl set to true to skip an updateItemUrl call
    * @export
    */
-  selectItem(id, skipUpdateUrl) {
+  selectItem(id, skipNavigateToUrl) {
+
     this.id = id;
 
-    if(!skipUpdateUrl) {
-        this.updateItemUrl_();
+    if(!skipNavigateToUrl) {
+      this.updateItemUrl_();
     }
-
     this.loadCard();
   }
 
@@ -197,8 +196,8 @@ upvote.admin.lib.controllers.ModelController = class {
         this.card['save']();
       };
       // Add function to select item
-      this.card['selectItem'] = (id, skipUpdateUrl) => {
-        return this.selectItem(id, skipUpdateUrl);
+      this.card['selectItem'] = (id, skipNavigateToUrl) => {
+        return this.selectItem(id, skipNavigateToUrl);
       };
     });
   }

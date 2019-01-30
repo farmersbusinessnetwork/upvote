@@ -4,7 +4,7 @@
   <uv-listing-cell>{{item.blockable.productName}}</uv-listing-cell>
   <uv-listing-cell>{{item.blockable.class_ | prettifyType}}</uv-listing-cell>
   <uv-listing-cell>
-    <md-checkbox ng-disabled="true" ng-checked="item.blockable.flagged"></md-checkbox>
+    <md-checkbox ng-disabled="true" ng-checked="item.blockable.flagged" aria-label="flagged"></md-checkbox>
   </uv-listing-cell>
   <uv-listing-cell>{{ item.blockable.recordedDt | date:'medium' }}</uv-listing-cell>
   <uv-listing-cell>{{item.blockable.score}}</uv-listing-cell>

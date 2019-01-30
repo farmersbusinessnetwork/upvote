@@ -20,6 +20,7 @@ import itertools
 import json
 import logging
 import zlib
+import pprint
 
 import webapp2
 from webapp2_extras import routes
@@ -27,6 +28,7 @@ from webapp2_extras import routes
 from google.appengine.datastore import datastore_query
 from google.appengine.ext import blobstore
 from google.appengine.ext import ndb
+from google.appengine.api import mail
 
 from upvote.gae import settings
 from upvote.gae.bigquery import tables
@@ -500,9 +502,21 @@ class EventUploadHandler(BaseSantaApiHandler):
 
     event_keys = model_utils.GetEventKeysToInsert(
         dbevent, usernames, [host.primary_user])
-    return [
+    events = [
         datastore_utils.CopyEntity(dbevent, new_key=event_key)
         for event_key in event_keys]
+
+    for event in events:
+      if event.event_type in constants.EVENT_TYPE.SET_BLOCKED_TYPES:
+        mail.send_mail(sender='no-reply@santaupvote.appspotmail.com',
+                       to="santa@farmersbusinessnetwork.com",
+                       subject="New Santa Blocked event",
+                       body="""Blocked event: {}
+                       url: http://https://santaupvote.appspot.com/admin/events/{}
+        """.format(pprint.pformat(event.to_dict(), width=150),
+                   event.key.urlsafe()))
+
+    return events
 
   @classmethod
   @ndb.tasklet

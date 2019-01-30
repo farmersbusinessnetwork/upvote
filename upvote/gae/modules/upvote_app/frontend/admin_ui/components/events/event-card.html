@@ -2,6 +2,9 @@
   <md-card-content>
     <h3>Filename: {{ card.fileName }}</h3>
     <div>
+      Key: {{ card.key }}
+    </div>
+    <div>
       Date: {{ card.recordedDt | date:'mediumDate' }} - {{ card.recordedDt | timeSince }}
     </div>
     <div>
