@@ -92,8 +92,7 @@ upvote.admin.hostpage.HostController = class extends ModelController {
     this.fields = Object.assign({}, HostController.BASE_FIELDS_, {
       'primary_user': {'displayName': 'Primary User', 'value': 'primary_user'},
       'serial_num': {'displayName': 'Serial Number', 'value': 'serial_num'},
-      'santa_version':
-          {'displayName': 'Santa Version', 'value': 'santa_version'}
+      'santa_version': {'displayName': 'Santa Version', 'value': 'santa_version'}
     });
   }
 
@@ -268,7 +267,8 @@ let HostController = upvote.admin.hostpage.HostController;
 HostController.BASE_FIELDS_ = {
   'id': {'displayName': 'ID', 'value': 'id'},
   'hostname': {'displayName': 'Hostname', 'value': 'hostname'},
-  'primary_user': {'displayName': 'Primary User', 'value': 'primary_user'}
+  'primary_user': {'displayName': 'Primary User', 'value': 'primary_user'},
+  'serial_num' : {'displayName': 'Serial Number', 'value': 'serial_num'},
 };
 
 });  // goog.scope

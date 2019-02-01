@@ -44,5 +44,5 @@ upvote.admin.hosts.HostResource = buildResource(API_PREFIX + ':id', {
 
 /** @export {function(!angular.$resource):!angular.Resource} */
 upvote.admin.hosts.HostQueryResource =
-    buildQueryResource(API_PREFIX + 'query/:platform');
+    buildQueryResource(API_PREFIX + 'query/santa/:platform');
 });  // goog.scope

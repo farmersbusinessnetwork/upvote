@@ -119,6 +119,13 @@
           </span>
           <span class="md-subhead uv-host-card-detail"
                 ng-if="hostCtrl.hostUtils.isSantaHost(host) && hostCtrl.detailsVisible(host.id)">
+            Serial Number:
+            <span class="uv-host-card-value">
+              {{ host.serialNum }}
+            </span>
+          </span>
+          <span class="md-subhead uv-host-card-detail"
+                ng-if="hostCtrl.hostUtils.isSantaHost(host) && hostCtrl.detailsVisible(host.id)">
             Client Version:
             <span class="uv-host-card-value">
               {{ host.santaVersion }}
