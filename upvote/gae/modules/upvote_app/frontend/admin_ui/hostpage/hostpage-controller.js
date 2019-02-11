@@ -268,7 +268,7 @@ upvote.admin.hostpage.HostController = class extends ModelController {
       this.card['rootScope'] = this.rootScope;
 
       // Hosts page doesn't have a card for now, so upload list results
-      this.content = [results];
+      this.content = [this.card];
       this.requestData['cursor'] = null;
       this.requestData['more'] = false;
       this.requestData['perPage'] = 50;
