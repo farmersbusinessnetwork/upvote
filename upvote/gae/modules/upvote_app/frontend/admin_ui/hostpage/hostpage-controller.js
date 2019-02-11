@@ -71,7 +71,8 @@ upvote.admin.hostpage.HostController = class extends ModelController {
     page.title = 'Hosts';
 
     // Initialize the controller
-    this.init();
+    let idParam = this.routeParams['id'];
+    this.init(idParam);
 
     this.userResource_.getSelf()['$promise']
         .then((user) => {

@@ -88,11 +88,16 @@ upvote.admin.lib.controllers.ModelController = class {
 
   /**
    * Initialization logic for constructor.
+   * @param {boolean} skip_load Whether to load data during init.
+   *
    * @protected
    */
-  init() {
+  init(skip_load) {
     this.updateOptions();
-    this.loadData();
+
+    if(!skip_load) {
+      this.loadData();
+    }
 
     // If an id was supplied as a route parameter, load the card.
     let idParam = this.routeParams['id'];
