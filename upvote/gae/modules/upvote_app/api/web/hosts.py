@@ -49,10 +49,19 @@ class HostQueryHandler(handler_utils.UserFacingQueryHandler):
     self._Query()
 
 
-class SantaHostQueryHandler(HostQueryHandler):
+class SantaHostQueryHandler(handler_utils.UserFacingQueryHandler):
   """Handler for querying santa hosts."""
 
   MODEL_CLASS = host_models.SantaHost
+
+  @property
+  def RequestCounter(self):
+    return monitoring.host_requests
+
+  @handler_utils.RequireCapability(constants.PERMISSIONS.VIEW_OTHER_HOSTS)
+  @handler_utils.RecordRequest
+  def get(self):
+    self._Query()
 
 
 class HostHandler(handler_utils.UserFacingHandler):

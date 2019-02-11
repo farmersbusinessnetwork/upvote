@@ -260,6 +260,20 @@ upvote.admin.hostpage.HostController = class extends ModelController {
   hideDetails(hostId) {
     this.visibleHostDetails_.delete(hostId);
   }
+
+    /** @override */
+  loadCard() {
+    let cardPromise = super.loadCard();
+    return (!cardPromise) ? cardPromise : cardPromise.then(() => {
+      this.card['rootScope'] = this.rootScope;
+
+      // Hosts page doesn't have a card for now, so upload list results
+      this.content = [results];
+      this.requestData['cursor'] = null;
+      this.requestData['more'] = false;
+      this.requestData['perPage'] = 50;
+    });
+  }
 };
 let HostController = upvote.admin.hostpage.HostController;
 
