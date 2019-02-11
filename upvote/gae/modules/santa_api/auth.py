@@ -55,14 +55,14 @@ def ValidateClient(all_headers, uuid, request):
   try:
     fbn_santa_sync_key = _get_fbn_santa_sync_key()
     if not fbn_santa_sync_key:
-      logging.error("FBN Santa Sync Key is not available")
-      return True  # TODO: make this false
+      logging.info("FBN Santa Sync Key is not available")
+      return True  # TODO: make this false and above error
 
     fbn_auth_signature = all_headers.get(_fbn_auth_header)
 
     if not fbn_auth_signature:
-      logging.error("FBN Santa Sync header value was not provided")
-      return True  # TODO: make this false
+      logging.info("FBN Santa Sync header value was not provided")
+      return True  # TODO: make this false and above error
 
     # HMAC_SHA256 of data:
     # 1. Lower of: METHOD PATH[ ?QUERY][#FRAGMENT]\n
