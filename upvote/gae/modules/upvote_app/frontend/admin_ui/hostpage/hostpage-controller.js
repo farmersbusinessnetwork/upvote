@@ -284,6 +284,7 @@ HostController.BASE_FIELDS_ = {
   'hostname': {'displayName': 'Hostname', 'value': 'hostname'},
   'primary_user': {'displayName': 'Primary User', 'value': 'primary_user'},
   'serial_num' : {'displayName': 'Serial Number', 'value': 'serial_num'},
+  'client_mode' : {'displayName': 'Status', 'value': 'client_mode'},
 };
 
 });  // goog.scope
