@@ -14,6 +14,7 @@
 
 goog.provide('upvote.admin.hostpage.HostController');
 
+goog.require('goog.dom.safe');
 goog.require('upvote.admin.lib.controllers.ModelController');
 goog.require('upvote.errornotifier.ErrorService');
 goog.require('upvote.hosts.HostService');
