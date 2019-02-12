@@ -103,7 +103,8 @@ upvote.admin.hostpage.HostController = class extends ModelController {
    * @export
    */
   goToHostEvents(hostId) {
-    this.location.path('/admin/events').search({'hostId': hostId});
+    // this.location.path('/admin/events').search({'hostId': hostId});
+    goog.dom.safe.openInWindow('/admin/events?hostId=' + hostId);
   }
 
   /**
