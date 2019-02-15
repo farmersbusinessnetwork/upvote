@@ -37,7 +37,7 @@ if grep -q "SANTA_DEFAULT_CLIENT_MODE = constants.SANTA_CLIENT_MODE.MONITOR" "${
     # NOTE: first run needs to be done w/o anything after PROJ_ID
     # NOTE: in order to do a full clean, run: bazel clean --expunge
     # NOTE: for initial deploy you need to remove app.yaml + santa_api.yaml, when you do this it only deploys app.yaml (upvote)
-    bazel run --incompatible_package_name_is_a_function=false upvote/gae:monolith_binary.deploy -- ${PROJ_ID} --version auto ${DEPLOY_PARAMS}
+    bazel run --incompatible_package_name_is_a_function=false upvote/gae:monolith_binary.deploy -- --version auto ${DEPLOY_PARAMS}
 else
     echo -e "${RED}Error: Branch does not contain required FBN changes!!!${NC}"
 fi
