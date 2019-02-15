@@ -46,7 +46,8 @@ class GroupManager(AbstractGroupManager):
   _GROUPS = {
       'admin-users': [
         "alex@farmersbusinessnetwork.com",
-        "amohr@farmersbusinessnetwork.com"
+        "amohr@farmersbusinessnetwork.com",
+        "ed@farmersbusinessnetwork.com",
       ]
   }
 
