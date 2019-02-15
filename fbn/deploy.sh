@@ -14,7 +14,7 @@ PROJ_ID="santaupvote"
 #XXX add appengine_config.py checks here
 
 if [ $# -eq 0 ]; then
-    DEPLOY_PARAMS="app.yaml santa_api.yaml"
+    DEPLOY_PARAMS=""
 else
     DEPLOY_PARAMS="$@"
 fi
