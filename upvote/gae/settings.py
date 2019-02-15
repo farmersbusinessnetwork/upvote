@@ -47,7 +47,7 @@ ENABLE_BINARY_ANALYSIS_PRECACHING = False
 EVENT_CREATION = constants.EVENT_CREATION.HOST_OWNER
 
 # The default execution mode for clients syncing for the first time.
-SANTA_DEFAULT_CLIENT_MODE = constants.SANTA_CLIENT_MODE.MONITOR
+SANTA_DEFAULT_CLIENT_MODE = constants.SANTA_CLIENT_MODE.LOCKDOWN
 # If provided, a regex string that matches execution paths (read: not files)
 # from which executions will be allowed.
 # NOTE: This regex must be written in ICU format. Docs can be found here:
