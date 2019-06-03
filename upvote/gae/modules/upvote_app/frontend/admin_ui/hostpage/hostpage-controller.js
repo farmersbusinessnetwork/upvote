@@ -268,8 +268,6 @@ upvote.admin.hostpage.HostController = class extends ModelController {
   loadCard() {
     let cardPromise = super.loadCard();
     return (!cardPromise) ? cardPromise : cardPromise.then(() => {
-      this.card['rootScope'] = this.rootScope;
-
       // Hosts page doesn't have a card for now, so upload list results
       this.content = [this.card];
       this.requestData['cursor'] = null;

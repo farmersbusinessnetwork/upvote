@@ -112,8 +112,6 @@ upvote.admin.blockablepage.BlockableController = class extends ModelController {
   loadCard() {
     let cardPromise = super.loadCard();
     return (!cardPromise) ? cardPromise : cardPromise.then(() => {
-      this.card['rootScope'] = this.rootScope;
-
       if (!!this.card['certId']) {
         this.resource
             .get({'id': this.card['certId']})['$promise']
