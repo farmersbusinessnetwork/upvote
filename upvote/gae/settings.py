@@ -68,7 +68,7 @@ SANTA_DIRECTORY_BLACKLIST_REGEX = None
 SANTA_EVENT_BATCH_SIZE = 25
 # The maximum number of rules that Upvote will attempt to send to clients in a
 # single request.
-SANTA_RULE_BATCH_SIZE = 50
+SANTA_RULE_BATCH_SIZE = 1000
 # Whether Upvote will require connecting clients to provide an XSRF token.
 SANTA_REQUIRE_XSRF = True
 # Whether Santa clients will upload bundles.
@@ -89,6 +89,7 @@ FAILSAFE_ADMINISTRATORS = [
     "amohr@farmersbusinessnetwork.com",
     "ed@farmersbusinessnetwork.com",
     "mdaniel@farmersbusinessnetwork.com",
+    "nmufti@farmersbusinessnetwork.com",
 ]
 
 # The score thresholds beyond which a Blockable will transition to the
