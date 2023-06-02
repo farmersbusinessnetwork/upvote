@@ -20,6 +20,8 @@ import itertools
 import json
 import logging
 import zlib
+import gzip
+from cStringIO import StringIO
 
 import webapp2
 from webapp2_extras import routes
@@ -150,15 +152,19 @@ class BaseSantaApiHandler(handler_utils.UpvoteRequestHandler):
           httplib.FORBIDDEN, explanation='Client has not completed preflight')
 
     if self.SHOULD_PARSE_JSON:
+      content_type = self.request.headers.get('Content-Encoding')
+      body = self.request.body
       try:
-        if self.request.headers.get('Content-Encoding') in ('zlib', 'deflate'):
-          body = zlib.decompress(self.request.body)
-        else:
-          body = self.request.body
+        if content_type in ('zlib', 'deflate'):
+          body = zlib.decompress(body)
+        elif content_type == 'gzip':
+            buf = StringIO(body)
+            f = gzip.GzipFile(mode='rb', fileobj=buf)
+            body = f.read(len(body))
         self.parsed_json = json.loads(body)
       except ValueError:
         logging.info('Rejecting client: failed to parse JSON.')
-        logging.info('Malformed JSON: "%s"', body)
+        logging.info('Malformed JSON: "%s", content-type: "%s"', body, content_type)
         self.abort(httplib.BAD_REQUEST, explanation='Bad JSON body')
 
     super(BaseSantaApiHandler, self).dispatch()
