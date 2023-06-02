@@ -20,7 +20,6 @@ import itertools
 import json
 import logging
 import zlib
-import pprint
 
 import webapp2
 from webapp2_extras import routes
@@ -152,7 +151,7 @@ class BaseSantaApiHandler(handler_utils.UpvoteRequestHandler):
 
     if self.SHOULD_PARSE_JSON:
       try:
-        if self.request.headers.get('Content-Encoding') == 'zlib':
+        if self.request.headers.get('Content-Encoding') in ('zlib', 'deflate'):
           body = zlib.decompress(self.request.body)
         else:
           body = self.request.body
