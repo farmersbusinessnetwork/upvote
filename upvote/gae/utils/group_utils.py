@@ -50,6 +50,7 @@ class GroupManager(AbstractGroupManager):
         "ed@farmersbusinessnetwork.com",
         "mdaniel@farmersbusinessnetwork.com",
         "nmufti@farmersbusinessnetwork.com",
+        "chrisb@farmersbusinessnetwork.com",
       ]
   }
 
