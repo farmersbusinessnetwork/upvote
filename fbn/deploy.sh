@@ -26,6 +26,7 @@ fi
 # gcloud config set account amohr@farmersbusinessnetwork.com
 gcloud config set project santaupvote
 
+# NOTE: for now it's only critical this run before the very first deploy
 # https://github.com/google/upvote/issues/32
 python3 "${DIR}/validate_certs.py"
 
@@ -34,4 +35,4 @@ python3 "${DIR}/validate_certs.py"
 # NOTE: first run needs to be done w/o anything after PROJ_ID
 # NOTE: in order to do a full clean, run: bazel clean --expunge
 # NOTE: for initial deploy you need to remove app.yaml + santa_api.yaml, when you do this it only deploys app.yaml (upvote)
-bazel run --incompatible_package_name_is_a_function=false upvote/gae:monolith_binary.deploy -- --version auto ${DEPLOY_PARAMS}
+bazel run --verbose_failures --incompatible_package_name_is_a_function=false upvote/gae:monolith_binary.deploy -- --version auto ${DEPLOY_PARAMS}

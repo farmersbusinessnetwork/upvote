@@ -1,3 +1,4 @@
+# NOTE: this does not work on Rosetta due to VM crashes while building: https://github.com/docker/roadmap/issues/384
 FROM python:2
 
 RUN apt-get update && \
