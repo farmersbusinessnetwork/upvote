@@ -87,9 +87,9 @@ SANTA_CLIENT_VALIDATION = constants.VALIDATION_MODE.FAIL_CLOSED
 FAILSAFE_ADMINISTRATORS = [
     "alex@farmersbusinessnetwork.com",
     "amohr@farmersbusinessnetwork.com",
-    "ed@farmersbusinessnetwork.com",
     "nmufti@farmersbusinessnetwork.com",
-    "chrisb@farmersbusinessnetwork.com"
+    "chrisb@farmersbusinessnetwork.com",
+    "rhutchinson@farmersbusinessnetwork.com",
 ]
 
 # The score thresholds beyond which a Blockable will transition to the
