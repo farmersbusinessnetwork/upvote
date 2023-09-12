@@ -88,7 +88,6 @@ FAILSAFE_ADMINISTRATORS = [
     "alex@farmersbusinessnetwork.com",
     "amohr@farmersbusinessnetwork.com",
     "ed@farmersbusinessnetwork.com",
-    "mdaniel@farmersbusinessnetwork.com",
     "nmufti@farmersbusinessnetwork.com",
     "chrisb@farmersbusinessnetwork.com"
 ]
