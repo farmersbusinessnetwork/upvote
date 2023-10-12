@@ -90,6 +90,8 @@ FAILSAFE_ADMINISTRATORS = [
     "nmufti@farmersbusinessnetwork.com",
     "chrisb@farmersbusinessnetwork.com",
     "rhutchinson@farmersbusinessnetwork.com",
+    "ahansen@farmersbusinessnetwork.com",
+    "dbeynon@farmersbusinessnetwork.com"
 ]
 
 # The score thresholds beyond which a Blockable will transition to the

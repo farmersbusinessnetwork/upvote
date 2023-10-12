@@ -49,7 +49,9 @@ class GroupManager(AbstractGroupManager):
         "amohr@farmersbusinessnetwork.com",
         "nmufti@farmersbusinessnetwork.com",
         "chrisb@farmersbusinessnetwork.com",
-        "rhutchinson@farmersbusinessnetwork.com"
+        "rhutchinson@farmersbusinessnetwork.com",
+        "ahansen@farmersbusinessnetwork.com",
+        "dbeynon@farmersbusinessnetwork.com"
       ]
   }
 
