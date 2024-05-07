@@ -85,13 +85,13 @@ SANTA_CLIENT_VALIDATION = constants.VALIDATION_MODE.FAIL_CLOSED
 # A list of email addresses of users that will always have the permissions of
 # administrators.
 FAILSAFE_ADMINISTRATORS = [
-    "alex@farmersbusinessnetwork.com",
     "amohr@farmersbusinessnetwork.com",
     "nmufti@farmersbusinessnetwork.com",
     "chrisb@farmersbusinessnetwork.com",
     "rhutchinson@farmersbusinessnetwork.com",
     "ahansen@farmersbusinessnetwork.com",
-    "dbeynon@farmersbusinessnetwork.com"
+    "dbeynon@farmersbusinessnetwork.com",
+    "jniederer@fbn-cdi.com"
 ]
 
 # The score thresholds beyond which a Blockable will transition to the

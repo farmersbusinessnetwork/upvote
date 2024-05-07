@@ -45,13 +45,13 @@ class GroupManager(AbstractGroupManager):
   """An static implementation of the groups interface."""
   _GROUPS = {
       'admin-users': [
-        "alex@farmersbusinessnetwork.com",
         "amohr@farmersbusinessnetwork.com",
         "nmufti@farmersbusinessnetwork.com",
         "chrisb@farmersbusinessnetwork.com",
         "rhutchinson@farmersbusinessnetwork.com",
         "ahansen@farmersbusinessnetwork.com",
-        "dbeynon@farmersbusinessnetwork.com"
+        "dbeynon@farmersbusinessnetwork.com",
+        "jniederer@fbn-cdi.com"
       ]
   }
 
